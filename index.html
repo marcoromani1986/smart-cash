@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Smart Cash</title>
+<meta name="description" content="Fast, offline personal cash management across multiple accounts and currencies.">
+<meta name="theme-color" content="#121A33">
+<meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Smart Cash">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --ink:#121A33; --ink-soft:#28345A; --ink-2:#1E2A4E;
+  --paper:#F7F5F0; --paper-2:#FFFFFF; --paper-3:#EEEAE1;
+  --brass:#C08A2E; --brass-soft:#E7C685; --brass-bright:#D8A548;
+  --sage:#3F7D5C; --sage-bg:#E4EFE8;
+  --clay:#B33F3F; --clay-bg:#F5E4E1;
+  --slate:#6B7280; --slate-soft:#9CA3AF;
+  --line:#E4E0D6;
+  --text:#1B2333; --text-dim:#5B6478;
+  --shadow: 0 1px 2px rgba(20,33,61,.05), 0 8px 24px rgba(20,33,61,.07);
+  --shadow-lg: 0 4px 10px rgba(18,26,51,.08), 0 20px 44px rgba(18,26,51,.10);
+  --shadow-hero: 0 14px 30px -8px rgba(18,26,51,.45), 0 4px 12px rgba(18,26,51,.25);
+  --nav-bg: rgba(255,255,255,.82);
+  --radius-lg:24px; --radius-md:16px; --radius-sm:11px;
+  --font-ui:'Manrope',system-ui,-apple-system,'Segoe UI',Tahoma,Arial,sans-serif;
+  --font-num:'Space Mono','Manrope',monospace;
+  --safe-t: env(safe-area-inset-top,0px);
+  --safe-b: env(safe-area-inset-bottom,0px);
+  --ease: cubic-bezier(.22,.9,.32,1);
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme: dark){
+    --ink:#EDEEF2; --ink-soft:#C7CCDA; --ink-2:#D8DCE6;
+    --paper:#0B1120; --paper-2:#141B2E; --paper-3:#1B2438;
+    --brass:#D9A548; --brass-soft:#3A2E17; --brass-bright:#E6BA6B;
+    --sage:#6FBF95; --sage-bg:#132A20;
+    --clay:#E17575; --clay-bg:#301A1A;
+    --slate:#8B93A7; --slate-soft:#5B6478;
+    --line:#252F49;
+    --text:#EDEEF2; --text-dim:#8D96AC;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.4);
+    --shadow-lg: 0 4px 14px rgba(0,0,0,.4), 0 24px 48px rgba(0,0,0,.5);
+    --shadow-hero: 0 18px 36px -10px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.4);
+    --nav-bg: rgba(20,27,46,.86);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#EDEEF2; --ink-soft:#C7CCDA; --ink-2:#D8DCE6;
+  --paper:#0B1120; --paper-2:#141B2E; --paper-3:#1B2438;
+  --brass:#D9A548; --brass-soft:#3A2E17; --brass-bright:#E6BA6B;
+  --sage:#6FBF95; --sage-bg:#132A20;
+  --clay:#E17575; --clay-bg:#301A1A;
+  --slate:#8B93A7; --slate-soft:#5B6478;
+  --line:#252F49;
+  --text:#EDEEF2; --text-dim:#8D96AC;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 24px rgba(0,0,0,.4);
+  --shadow-lg: 0 4px 14px rgba(0,0,0,.4), 0 24px 48px rgba(0,0,0,.5);
+  --shadow-hero: 0 18px 36px -10px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.4);
+  --nav-bg: rgba(20,27,46,.86);
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:var(--safe-t);}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--paper); color:var(--text);
+  font-family:var(--font-ui); font-size:15px; -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:none;
+  background-image: radial-gradient(600px 300px at 15% -8%, rgba(192,138,46,.06), transparent 60%);
+  background-attachment: fixed;
+}
+button,input,select,textarea{font-family:inherit; color:inherit;}
+button{cursor:pointer;}
+h1,h2,h3,p{margin:0;}
+::selection{background:var(--brass-soft);}
+a{color:inherit;}
+.hidden{display:none!important;}
+
+/* focus visibility */
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--brass); outline-offset:2px;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms!important; transition-duration:.001ms!important;}
+}
+
+/* ============ APP SHELL ============ */
+#appRoot{max-width:560px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; position:relative; background:var(--paper);}
+[dir="rtl"] #appRoot{direction:rtl;}
+
+.topbar{
+  position:sticky; top:0; z-index:20; background:var(--nav-bg);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  padding:calc(14px + var(--safe-t)) 18px 12px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  border-bottom:1px solid transparent;
+  transition:border-color .2s;
+}
+.topbar.scrolled{border-bottom-color:var(--line);}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{
+  width:34px; height:34px; border-radius:10.5px;
+  background:linear-gradient(155deg, var(--ink) 0%, var(--ink-2, var(--ink-soft)) 130%);
+  color:var(--brass-bright);
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-num); font-weight:700; font-size:14px;
+  flex-shrink:0; box-shadow:0 3px 8px rgba(18,26,51,.35), inset 0 1px 0 rgba(255,255,255,.08);
+  letter-spacing:-.03em;
+}
+.brand-title{font-weight:800; font-size:17px; letter-spacing:-.015em;}
+.topbar-actions{display:flex; align-items:center; gap:6px;}
+.icon-btn{
+  width:38px; height:38px; border-radius:12px; border:none; background:var(--paper-3);
+  display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--text);
+  transition:background .15s, transform .12s var(--ease);
+}
+.icon-btn:active{transform:scale(.9);}
+
+main#app{flex:1; padding:4px 18px calc(110px + var(--safe-b)); overflow-x:hidden;}
+main#app.page-anim{animation:pageIn .32s var(--ease);}
+@keyframes pageIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+#splashScreen{
+  position:fixed; inset:0; z-index:1000; background:linear-gradient(160deg, var(--ink-2,#1E2A4E) 0%, var(--ink) 70%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  transition:opacity .4s var(--ease), visibility .4s;
+}
+#splashScreen.hide{opacity:0; visibility:hidden; pointer-events:none;}
+.splash-mark{
+  width:72px; height:72px; border-radius:20px; background:rgba(255,255,255,.06);
+  color:var(--brass-bright); display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-num); font-weight:700; font-size:26px; box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  animation:splashPulse 1.4s ease-in-out infinite;
+}
+@keyframes splashPulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+.splash-title{color:#F7F5F0; font-weight:800; font-size:16px; letter-spacing:.01em;}
+
+.success-flash{
+  position:fixed; inset:0; z-index:400; display:flex; align-items:center; justify-content:center;
+  pointer-events:none; opacity:0;
+}
+.success-flash.show{animation:flashPop .6s var(--ease);}
+.success-flash .sf-circle{
+  width:84px; height:84px; border-radius:50%; background:var(--sage); color:#fff; font-size:36px;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 10px 30px rgba(63,125,92,.4);
+}
+@keyframes flashPop{
+  0%{opacity:0; transform:scale(.6);}
+  35%{opacity:1; transform:scale(1.08);}
+  55%{opacity:1; transform:scale(1);}
+  100%{opacity:0; transform:scale(1);}
+}
+
+.bottomnav{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  max-width:560px; margin:0 auto;
+  background:var(--nav-bg); -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px);
+  border-top:1px solid var(--line);
+  padding:8px 10px calc(10px + var(--safe-b));
+  display:grid; grid-template-columns:1fr 1fr 64px 1fr 1fr; align-items:center; gap:2px;
+}
+.nav-item{
+  background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:6px 2px; border-radius:12px; color:var(--text-dim); font-size:10.5px; font-weight:600;
+  transition:color .15s, transform .12s var(--ease);
+}
+.nav-item .nav-ic{font-size:19px; line-height:1; transition:transform .18s var(--ease);}
+.nav-item.active{color:var(--brass);}
+.nav-item.active .nav-ic{transform:translateY(-1px) scale(1.08);}
+.nav-fab{
+  width:58px; height:58px; border-radius:50%;
+  background:linear-gradient(160deg, var(--ink-2, var(--ink-soft)) 0%, var(--ink) 75%);
+  color:var(--brass-bright);
+  border:none; font-size:27px; font-weight:300; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 20px rgba(18,26,51,.4), inset 0 1px 0 rgba(255,255,255,.12);
+  margin:0 auto; transform:translateY(-16px);
+  transition:transform .18s var(--ease), box-shadow .18s var(--ease);
+}
+.nav-fab:active{transform:translateY(-16px) scale(.9); box-shadow:0 4px 12px rgba(18,26,51,.4);}
+
+/* ============ TYPOGRAPHY HELPERS ============ */
+.page-title{font-size:23px; font-weight:800; letter-spacing:-.01em; margin:10px 0 4px;}
+.page-sub{color:var(--text-dim); font-size:13.5px; margin-bottom:18px;}
+.section-head{display:flex; align-items:center; justify-content:space-between; margin:22px 0 10px;}
+.section-head h3{font-size:14.5px; font-weight:700;}
+.link-btn{background:none; border:none; color:var(--brass); font-weight:700; font-size:13px; padding:4px;}
+.amount{font-family:var(--font-num); font-variant-numeric:tabular-nums; letter-spacing:-.02em;}
+.pos{color:var(--sage);}
+.neg{color:var(--clay);}
+
+/* ============ CARDS ============ */
+.card{background:var(--paper-2); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:18px; border:1px solid rgba(120,120,120,.06);}
+.hero-balance{
+  background:linear-gradient(155deg, var(--ink-2, var(--ink-soft)) 0%, var(--ink) 68%);
+  color:var(--paper);
+  border-radius:var(--radius-lg); padding:24px 22px 20px; margin-top:8px;
+  position:relative; overflow:hidden; box-shadow:var(--shadow-hero);
+  animation: heroIn .6s var(--ease);
+}
+@keyframes heroIn{ from{opacity:0; transform:translateY(6px) scale(.985);} to{opacity:1; transform:translateY(0) scale(1);} }
+.hero-balance::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(160px 120px at 90% -15%, rgba(216,165,72,.32), transparent 70%),
+             radial-gradient(220px 140px at -10% 115%, rgba(216,165,72,.10), transparent 70%);
+}
+.hero-balance::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background-image:
+    repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 1px, transparent 1px, transparent 3px);
+}
+.hero-label{font-size:12.5px; color:var(--brass-soft); font-weight:700; opacity:.95; position:relative; letter-spacing:.01em;}
+.hero-figure{font-family:var(--font-num); font-size:35px; font-weight:700; margin-top:7px; letter-spacing:-.02em; position:relative;}
+.currency-tabs{display:flex; gap:6px; margin-top:16px; position:relative;}
+.ctab{
+  flex:1; text-align:center; padding:8px 4px; border-radius:10px; background:rgba(255,255,255,.07);
+  border:none; color:rgba(247,245,240,.6); font-weight:700; font-size:12.5px; font-family:var(--font-num);
+  transition:background .18s var(--ease), color .18s var(--ease);
+}
+.ctab.active{background:var(--brass-bright); color:var(--ink); box-shadow:0 3px 10px rgba(0,0,0,.25);}
+
+.cbox-scroll{display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; margin:0 -2px; scrollbar-width:none;}
+.cbox-scroll::-webkit-scrollbar{display:none;}
+.cbox-card{
+  min-width:152px; background:var(--paper-2); border-radius:var(--radius-md); box-shadow:var(--shadow);
+  padding:15px; flex-shrink:0; border:1px solid var(--line);
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease);
+}
+.cbox-card:active{transform:scale(.97);}
+.cbox-card .cb-icon{width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px;}
+.cbox-card .cb-name{font-weight:700; font-size:13.5px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.cbox-card .cb-bal{font-family:var(--font-num); font-weight:700; font-size:16px;}
+.cbox-card.add-new{display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; color:var(--text-dim); border-style:dashed; box-shadow:none;}
+
+.txn-row{
+  display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--line);
+}
+.txn-row:last-child{border-bottom:none;}
+.txn-ic{width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;}
+.txn-mid{flex:1; min-width:0;}
+.txn-desc{font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.txn-meta{font-size:12px; color:var(--text-dim); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.txn-right{text-align:end; flex-shrink:0;}
+.txn-amt{font-weight:700; font-size:14.5px;}
+.txn-date{font-size:11px; color:var(--text-dim); margin-top:2px;}
+.txn-row{position:relative;}
+.txn-row .swipe-actions{display:flex; gap:6px;}
+.mini-btn{border:none; background:var(--paper-3); width:30px; height:30px; border-radius:9px; font-size:13px; display:flex; align-items:center; justify-content:center;}
+
+/* budget bar */
+.budget-item{margin-bottom:14px;}
+.budget-top{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px;}
+.budget-top .bname{font-weight:700;}
+.budget-track{height:8px; border-radius:6px; background:var(--paper-3); overflow:hidden;}
+.budget-fill{height:100%; border-radius:6px; background:var(--sage); transition:width .3s;}
+.budget-fill.warn{background:var(--brass);}
+.budget-fill.over{background:var(--clay);}
+
+/* ============ FORM ELEMENTS ============ */
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:12.5px; font-weight:700; color:var(--text-dim); margin-bottom:6px;}
+.field input[type=text], .field input[type=number], .field input[type=date], .field input[type=password], .field select, .field textarea{
+  width:100%; border:1.5px solid var(--line); background:var(--paper-2); border-radius:var(--radius-sm);
+  padding:12px 13px; font-size:15px; color:var(--text);
+}
+.field textarea{resize:vertical; min-height:60px;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--brass); outline:none;}
+.seg{display:flex; background:var(--paper-3); border-radius:var(--radius-sm); padding:3px;}
+.seg button{flex:1; border:none; background:none; padding:10px 8px; border-radius:8px; font-weight:700; font-size:13.5px; color:var(--text-dim);}
+.seg button.active{background:var(--paper-2); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+.chip{
+  border:1.5px solid var(--line); background:var(--paper-2); border-radius:20px; padding:8px 13px;
+  font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; color:var(--text);
+}
+.chip.active{border-color:var(--brass); background:var(--brass-soft); color:var(--ink);}
+:root[data-theme="dark"] .chip.active{color:var(--ink);}
+.swatch-row{display:flex; flex-wrap:wrap; gap:9px;}
+.swatch{width:32px; height:32px; border-radius:9px; border:2px solid transparent; display:flex; align-items:center; justify-content:center; font-size:15px;}
+.swatch.active{border-color:var(--ink);}
+.emoji-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; max-height:180px; overflow-y:auto;}
+.emoji-cell{border:1.5px solid transparent; background:var(--paper-3); border-radius:9px; height:36px; display:flex; align-items:center; justify-content:center; font-size:17px;}
+.emoji-cell.active{border-color:var(--brass);}
+
+.btn{
+  display:flex; align-items:center; justify-content:center; gap:8px; width:100%; border:none;
+  padding:14px; border-radius:var(--radius-sm); font-weight:700; font-size:15px;
+  transition:transform .12s var(--ease), opacity .15s, box-shadow .15s var(--ease);
+  position:relative; overflow:hidden;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{
+  background:linear-gradient(160deg, var(--ink-2, var(--ink-soft)) 0%, var(--ink) 80%); color:var(--brass-bright);
+  box-shadow:0 6px 16px rgba(18,26,51,.28), inset 0 1px 0 rgba(255,255,255,.1);
+}
+.btn-danger{background:var(--clay-bg); color:var(--clay);}
+.btn-ghost{background:var(--paper-3); color:var(--text);}
+.btn-sm{width:auto; padding:9px 16px; font-size:13px;}
+.btn[disabled]{opacity:.45; pointer-events:none;}
+
+.search-bar{
+  display:flex; align-items:center; gap:9px; background:var(--paper-2); border:1.5px solid var(--line);
+  border-radius:var(--radius-sm); padding:10px 13px; margin-bottom:12px;
+}
+.search-bar input{border:none; background:none; flex:1; font-size:14.5px; outline:none;}
+.filter-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; margin-bottom:6px; scrollbar-width:none;}
+.filter-row::-webkit-scrollbar{display:none;}
+.filter-pill{white-space:nowrap; border:1.5px solid var(--line); background:var(--paper-2); border-radius:20px; padding:7px 13px; font-size:12.5px; font-weight:700; color:var(--text-dim); flex-shrink:0;}
+.filter-pill.active{background:var(--ink); color:var(--brass); border-color:var(--ink);}
+
+/* ============ MODAL / SHEET ============ */
+.overlay{
+  position:fixed; inset:0; background:rgba(15,22,38,.5); z-index:100; display:flex; align-items:flex-end;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.overlay.show{opacity:1; pointer-events:auto;}
+.sheet{
+  background:var(--paper); width:100%; max-width:560px; margin:0 auto; border-radius:24px 24px 0 0;
+  max-height:92vh; overflow-y:auto; padding:14px 20px calc(24px + var(--safe-b));
+  transform:translateY(100%); transition:transform .25s cubic-bezier(.32,.72,0,1);
+}
+.overlay.show .sheet{transform:translateY(0);}
+.sheet-handle{width:38px; height:4px; background:var(--line); border-radius:3px; margin:0 auto 14px;}
+.sheet-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.sheet-head h2{font-size:18px; font-weight:800;}
+.sheet-close{background:var(--paper-3); border:none; width:32px; height:32px; border-radius:10px; font-size:15px;}
+
+.confirm-box{text-align:center; padding:6px 6px 2px;}
+.confirm-ic{width:52px; height:52px; border-radius:50%; background:var(--clay-bg); color:var(--clay); font-size:24px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
+.confirm-box h3{font-size:16.5px; font-weight:800; margin-bottom:6px;}
+.confirm-box p{color:var(--text-dim); font-size:13.5px; line-height:1.5; margin-bottom:20px;}
+.confirm-actions{display:flex; gap:10px;}
+
+/* toast */
+#toastHost{position:fixed; left:0; right:0; bottom:calc(96px + var(--safe-b)); z-index:200; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none;}
+.toast{
+  background:var(--ink); color:var(--paper); padding:11px 16px; border-radius:14px; font-size:13.5px; font-weight:600;
+  display:flex; align-items:center; gap:14px; box-shadow:0 6px 20px rgba(0,0,0,.3); pointer-events:auto;
+  animation:toastIn .2s ease-out;
+}
+@keyframes toastIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+.toast button{background:none; border:none; color:var(--brass); font-weight:800; font-size:13px;}
+
+/* empty state */
+.empty{text-align:center; padding:50px 20px 30px; color:var(--text-dim);}
+.empty .e-ic{font-size:40px; margin-bottom:14px;}
+.empty h3{color:var(--text); font-size:16px; font-weight:800; margin-bottom:6px;}
+.empty p{font-size:13.5px; line-height:1.5; margin-bottom:18px;}
+
+/* lock screen */
+.lockscreen{position:fixed; inset:0; background:var(--ink); z-index:500; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--paper); padding:20px;}
+.lock-mark{width:64px; height:64px; border-radius:18px; background:rgba(192,138,46,.15); color:var(--brass); display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:18px;}
+.pin-dots{display:flex; gap:14px; margin:22px 0;}
+.pin-dot{width:14px; height:14px; border-radius:50%; border:2px solid var(--brass-soft);}
+.pin-dot.filled{background:var(--brass); border-color:var(--brass);}
+.pin-pad{display:grid; grid-template-columns:repeat(3,64px); gap:14px;}
+.pin-key{width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,.06); border:none; color:var(--paper); font-size:20px; font-weight:700;}
+.pin-key:active{background:rgba(255,255,255,.15);}
+.lock-error{color:var(--clay); font-size:13px; margin-top:10px; height:16px;}
+
+/* onboarding */
+.onb{text-align:center; padding:40px 10px;}
+.onb .onb-mark{width:76px; height:76px; border-radius:22px; background:var(--ink); color:var(--brass); font-size:34px; display:flex; align-items:center; justify-content:center; margin:0 auto 22px; font-family:var(--font-num); font-weight:700;}
+.onb h1{font-size:24px; font-weight:800; margin-bottom:8px;}
+.onb p{color:var(--text-dim); font-size:14px; line-height:1.6; margin-bottom:26px; max-width:340px; margin-inline:auto;}
+
+/* report bars */
+.bar-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.bar-label{width:76px; font-size:12px; font-weight:700; color:var(--text-dim); flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bar-track{flex:1; height:20px; border-radius:6px; background:var(--paper-3); overflow:hidden;}
+.bar-fill{height:100%; border-radius:6px;}
+.bar-val{font-family:var(--font-num); font-size:12px; font-weight:700; width:70px; text-align:end; flex-shrink:0;}
+
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0;}
+.stat-box{background:var(--paper-2); border-radius:var(--radius-md); padding:14px; box-shadow:var(--shadow);}
+.stat-box .s-label{font-size:11.5px; color:var(--text-dim); font-weight:700; margin-bottom:6px;}
+.stat-box .s-val{font-family:var(--font-num); font-size:18px; font-weight:700;}
+
+.settings-row{display:flex; align-items:center; justify-content:space-between; padding:14px 2px; border-bottom:1px solid var(--line);}
+.settings-row:last-child{border-bottom:none;}
+.settings-row .sr-label{font-weight:700; font-size:14px;}
+.settings-row .sr-sub{font-size:12px; color:var(--text-dim); margin-top:1px;}
+.settings-group{background:var(--paper-2); border-radius:var(--radius-md); padding:4px 14px; box-shadow:var(--shadow); margin-bottom:18px;}
+.switch{width:44px; height:26px; border-radius:14px; background:var(--paper-3); position:relative; border:none; flex-shrink:0;}
+.switch.on{background:var(--sage);}
+.switch::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .18s; box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.switch.on::after{transform:translateX(18px);}
+[dir="rtl"] .switch::after{left:auto; right:3px;}
+[dir="rtl"] .switch.on::after{transform:translateX(-18px);}
+
+.danger-zone{border:1.5px dashed var(--clay); border-radius:var(--radius-md); padding:14px; margin-bottom:18px;}
+.danger-zone h4{color:var(--clay); font-size:13.5px; font-weight:800; margin-bottom:10px;}
+
+@media (min-width:601px){
+  body{background:var(--paper-3);}
+  #appRoot{box-shadow:0 0 40px rgba(0,0,0,.08); min-height:100vh;}
+}
+</style>
+</head>
+<body>
+<div id="splashScreen">
+  <div class="splash-mark">SC</div>
+  <div class="splash-title">Smart Cash</div>
+</div>
+<div id="appRoot">
+  <header class="topbar" id="topbar">
+    <div class="brand">
+      <div class="brand-mark">SC</div>
+      <div class="brand-title" id="pageHeadTitle">Smart Cash</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btnSearchTop" title="Search">🔍</button>
+      <button class="icon-btn" id="btnSettingsTop" title="Settings">⚙️</button>
+    </div>
+  </header>
+  <main id="app"></main>
+  <nav class="bottomnav" id="bottomnav">
+    <button class="nav-item" data-route="dashboard"><span class="nav-ic">🏠</span><span data-t="nav_home">Home</span></button>
+    <button class="nav-item" data-route="cashboxes"><span class="nav-ic">🗂️</span><span data-t="nav_boxes">Cashboxes</span></button>
+    <button class="nav-fab" id="btnFab">+</button>
+    <button class="nav-item" data-route="ledger"><span class="nav-ic">📒</span><span data-t="nav_ledger">Ledger</span></button>
+    <button class="nav-item" data-route="reports"><span class="nav-ic">📊</span><span data-t="nav_reports">Reports</span></button>
+  </nav>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastHost"></div>
+<div id="successFlash" class="success-flash"><div class="sf-circle">✓</div></div>
+<div id="lockRoot"></div>
+
+<script>
+/* =========================================================================
+   SMART CASH — vanilla JS single-file app
+   ========================================================================= */
+const STORAGE_KEY = 'smartcash_data_v1';
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const todayISO = () => new Date().toISOString().slice(0,10);
+const CURRENCIES = ['EUR','USD','EGP'];
+const CURRENCY_SYMBOL = {EUR:'€', USD:'$', EGP:'E£'};
+
+/* ---------------- default data ---------------- */
+function defaultCategories(){
+  return [
+    {id:uid(), name_key:'cat_salary', icon:'💼', color:'#3F7D5C', type:'income'},
+    {id:uid(), name_key:'cat_gift', icon:'🎁', color:'#C08A2E', type:'income'},
+    {id:uid(), name_key:'cat_other_income', icon:'➕', color:'#3F7D5C', type:'income'},
+    {id:uid(), name_key:'cat_food', icon:'🍽️', color:'#B33F3F', type:'expense'},
+    {id:uid(), name_key:'cat_transport', icon:'🚗', color:'#6B7280', type:'expense'},
+    {id:uid(), name_key:'cat_bills', icon:'🧾', color:'#14213D', type:'expense'},
+    {id:uid(), name_key:'cat_shopping', icon:'🛍️', color:'#C08A2E', type:'expense'},
+    {id:uid(), name_key:'cat_health', icon:'💊', color:'#B33F3F', type:'expense'},
+    {id:uid(), name_key:'cat_home', icon:'🏠', color:'#6B7280', type:'expense'},
+    {id:uid(), name_key:'cat_leisure', icon:'🎬', color:'#3F7D5C', type:'expense'},
+    {id:uid(), name_key:'cat_other_expense', icon:'➖', color:'#6B7280', type:'expense'},
+  ];
+}
+function defaultState(){
+  return {
+    version:1,
+    cashboxes:[],
+    transactions:[],
+    categories: defaultCategories(),
+    recurring:[],
+    budgets:[],
+    settings:{
+      language: (navigator.language||'en').slice(0,2)==='ar' ? 'ar' : ((navigator.language||'en').slice(0,2)==='it' ? 'it' : 'en'),
+      theme:'auto',
+      pinEnabled:false,
+      pinCode:null,
+      lastCashboxId:null,
+      dashboardCurrency:'EUR',
+      onboarded:false
+    }
+  };
+}
+let state = null;
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); }
+    else { state = defaultState(); }
+    if(!state.budgets) state.budgets=[];
+    if(!state.settings.dashboardCurrency) state.settings.dashboardCurrency='EUR';
+  }catch(e){ state = defaultState(); }
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.error('Save failed', e); }
+}
+
+/* ---------------- i18n ---------------- */
+const I18N = {
+en:{
+  app_name:"Smart Cash", nav_home:"Home", nav_boxes:"Cashboxes", nav_ledger:"Ledger", nav_reports:"Reports", nav_settings:"Settings",
+  onb_title:"Welcome to Smart Cash", onb_sub:"Track cash across multiple boxes and currencies, fast — and fully offline. Let's set up your first cashbox.",
+  onb_cta:"Create your first cashbox",
+  total_balance:"Total balance", your_cashboxes:"Your cashboxes", recent_activity:"Recent activity", view_all:"View all",
+  no_transactions:"No transactions yet", no_transactions_sub:"Transactions you add will show up here.",
+  add_transaction:"Add transaction", edit_transaction:"Edit transaction", income:"Income", expense:"Expense", transfer:"Transfer",
+  amount:"Amount", description:"Description", category:"Category", date:"Date", cashbox:"Cashbox",
+  save:"Save", cancel:"Cancel", delete:"Delete", edit:"Edit", close:"Close", create:"Create", done:"Done",
+  description_ph:"What was this for?", select_category:"Select a category",
+  make_recurring:"Make this recurring", frequency:"Frequency", daily:"Daily", weekly:"Weekly", monthly:"Monthly",
+  new_cashbox:"New cashbox", cashbox_name:"Cashbox name", cashbox_name_ph:"e.g. Wallet, Savings, Office fund",
+  currency:"Currency", initial_balance:"Initial balance", icon:"Icon", color:"Color",
+  cashboxes_title:"Cashboxes", manage_cashboxes:"Manage your accounts",
+  edit_cashbox:"Edit cashbox", delete_cashbox:"Delete cashbox",
+  delete_cashbox_warn:"This will permanently delete this cashbox and all its transactions. This can't be undone.",
+  ledger_title:"Ledger", search_ph:"Search transactions…", all_cashboxes:"All cashboxes", all_categories:"All",
+  newest:"Newest", oldest:"Oldest", sort:"Sort",
+  reports_title:"Reports", today:"Today", this_month:"This month", custom_range:"Custom range",
+  from:"From", to:"To", apply:"Apply", total_income:"Total income", total_expense:"Total expense", net:"Net",
+  by_category:"By category", budgets:"Budgets", no_budgets:"No budgets set yet", set_budget:"Set a budget",
+  budget_limit:"Monthly limit", manage_budgets:"Manage budgets", add_budget:"Add budget",
+  settings_title:"Settings", language:"Language", appearance:"Appearance", light:"Light", dark:"Dark", auto:"Auto",
+  security:"Security", app_lock:"App lock", app_lock_sub:"Require a PIN to open the app",
+  categories_title:"Categories", manage_categories:"Add, edit or remove categories",
+  recurring_title:"Recurring transactions", manage_recurring:"Automate repeating income & expenses",
+  data_title:"Data", backup:"Backup data", backup_sub:"Export everything as a JSON file",
+  export_csv:"Export as CSV", export_csv_sub:"Download transactions for spreadsheets",
+  restore:"Restore backup", restore_sub:"Import data from a JSON file",
+  danger_zone:"Danger zone", clear_all:"Erase all data", clear_all_sub:"Delete every cashbox and transaction",
+  confirm_delete_title:"Delete this?", confirm_delete_txn:"This transaction will be permanently deleted.",
+  confirm_delete_cat:"Delete this category? Transactions keep their old category name.",
+  confirm_delete_rec:"This recurring rule will be removed. Past transactions stay untouched.",
+  confirm_clear:"This will erase all cashboxes, transactions, categories and settings. This cannot be undone.",
+  confirm_restore:"This will replace your current data with the contents of the backup file.",
+  undo:"Undo", deleted:"Deleted", restored:"Data restored", saved:"Saved", cleared:"All data erased",
+  transfer_title:"Transfer between cashboxes", from_cashbox:"From", to_cashbox:"To", exchange_rate:"Exchange rate",
+  exchange_rate_hint:"1 {from} = ? {to}", received_amount:"Amount received",
+  need_two_cashboxes:"You need at least two cashboxes to make a transfer.",
+  new_category:"New category", edit_category:"Edit category", category_name:"Category name", category_name_ph:"e.g. Groceries",
+  applies_to:"Applies to", both:"Both",
+  new_recurring:"New recurring rule", edit_recurring:"Edit recurring rule", starts:"Starts", ends_optional:"Ends (optional)",
+  active:"Active", next_run:"Next: {date}", no_recurring:"No recurring transactions", no_recurring_sub:"Automate rent, salary, subscriptions and more.",
+  no_cashboxes_yet:"No cashboxes yet", add_first_cashbox:"Add your first cashbox to get started.",
+  balance:"Balance", set_pin:"Set a 4-digit PIN", confirm_pin:"Confirm your PIN", enter_pin:"Enter your PIN",
+  wrong_pin:"Incorrect PIN, try again", pin_mismatch:"PINs didn't match, try again", unlock:"Unlock",
+  disable_lock:"Turn off app lock", search_results:"results", no_results:"No matching transactions",
+  cashbox_deleted:"Cashbox deleted", category_deleted:"Category deleted", recurring_deleted:"Recurring rule removed",
+  select_language:"Select language", currency_totals:"Totals by currency", of_limit:"of {limit}",
+  income_vs_expense:"Income vs expense", overview:"Overview", export_done:"Backup downloaded", csv_done:"CSV downloaded",
+  required_field:"Required", invalid_amount:"Enter a valid amount", pick_emoji:"Pick an icon", pick_color:"Pick a color",
+  no_categories_for_type:"No categories for this type yet — add one below.", quick_add:"Add",
+  budget_amount:"Limit amount", spent_of:"{spent} of {limit}", remove_budget:"Remove budget",
+  invalid_pin:"Enter 4 digits", data_management:"Backup, restore & reset", about:"About", version:"Version 1.0",
+  edit_details:"Edit details", edit_amount_category:"Amount & category",
+},
+it:{
+  app_name:"Smart Cash", nav_home:"Home", nav_boxes:"Casse", nav_ledger:"Registro", nav_reports:"Report", nav_settings:"Impostazioni",
+  onb_title:"Benvenuto su Smart Cash", onb_sub:"Gestisci contanti tra più casse e valute, in modo rapido e offline. Crea la tua prima cassa.",
+  onb_cta:"Crea la tua prima cassa",
+  total_balance:"Saldo totale", your_cashboxes:"Le tue casse", recent_activity:"Attività recente", view_all:"Vedi tutto",
+  no_transactions:"Nessuna transazione", no_transactions_sub:"Le transazioni aggiunte appariranno qui.",
+  add_transaction:"Aggiungi transazione", edit_transaction:"Modifica transazione", income:"Entrata", expense:"Uscita", transfer:"Trasferimento",
+  amount:"Importo", description:"Descrizione", category:"Categoria", date:"Data", cashbox:"Cassa",
+  save:"Salva", cancel:"Annulla", delete:"Elimina", edit:"Modifica", close:"Chiudi", create:"Crea", done:"Fatto",
+  description_ph:"A cosa si riferisce?", select_category:"Scegli una categoria",
+  make_recurring:"Rendi ricorrente", frequency:"Frequenza", daily:"Giornaliera", weekly:"Settimanale", monthly:"Mensile",
+  new_cashbox:"Nuova cassa", cashbox_name:"Nome cassa", cashbox_name_ph:"es. Portafoglio, Risparmi, Fondo ufficio",
+  currency:"Valuta", initial_balance:"Saldo iniziale", icon:"Icona", color:"Colore",
+  cashboxes_title:"Casse", manage_cashboxes:"Gestisci i tuoi conti",
+  edit_cashbox:"Modifica cassa", delete_cashbox:"Elimina cassa",
+  delete_cashbox_warn:"Questa cassa e tutte le sue transazioni verranno eliminate definitivamente. Azione irreversibile.",
+  ledger_title:"Registro", search_ph:"Cerca transazioni…", all_cashboxes:"Tutte le casse", all_categories:"Tutte",
+  newest:"Più recenti", oldest:"Meno recenti", sort:"Ordina",
+  reports_title:"Report", today:"Oggi", this_month:"Questo mese", custom_range:"Intervallo personalizzato",
+  from:"Da", to:"A", apply:"Applica", total_income:"Entrate totali", total_expense:"Uscite totali", net:"Netto",
+  by_category:"Per categoria", budgets:"Budget", no_budgets:"Nessun budget impostato", set_budget:"Imposta un budget",
+  budget_limit:"Limite mensile", manage_budgets:"Gestisci budget", add_budget:"Aggiungi budget",
+  settings_title:"Impostazioni", language:"Lingua", appearance:"Aspetto", light:"Chiaro", dark:"Scuro", auto:"Automatico",
+  security:"Sicurezza", app_lock:"Blocco app", app_lock_sub:"Richiedi un PIN per aprire l'app",
+  categories_title:"Categorie", manage_categories:"Aggiungi, modifica o rimuovi categorie",
+  recurring_title:"Transazioni ricorrenti", manage_recurring:"Automatizza entrate e uscite ripetute",
+  data_title:"Dati", backup:"Backup dati", backup_sub:"Esporta tutto in un file JSON",
+  export_csv:"Esporta CSV", export_csv_sub:"Scarica le transazioni per fogli di calcolo",
+  restore:"Ripristina backup", restore_sub:"Importa dati da un file JSON",
+  danger_zone:"Zona pericolosa", clear_all:"Cancella tutti i dati", clear_all_sub:"Elimina ogni cassa e transazione",
+  confirm_delete_title:"Eliminare?", confirm_delete_txn:"Questa transazione verrà eliminata definitivamente.",
+  confirm_delete_cat:"Eliminare questa categoria? Le transazioni manterranno il vecchio nome.",
+  confirm_delete_rec:"Questa regola ricorrente verrà rimossa. Le transazioni passate resteranno invariate.",
+  confirm_clear:"Verranno cancellati tutte le casse, transazioni, categorie e impostazioni. Azione irreversibile.",
+  confirm_restore:"I dati attuali verranno sostituiti con quelli del file di backup.",
+  undo:"Annulla", deleted:"Eliminato", restored:"Dati ripristinati", saved:"Salvato", cleared:"Tutti i dati cancellati",
+  transfer_title:"Trasferimento tra casse", from_cashbox:"Da", to_cashbox:"A", exchange_rate:"Tasso di cambio",
+  exchange_rate_hint:"1 {from} = ? {to}", received_amount:"Importo ricevuto",
+  need_two_cashboxes:"Servono almeno due casse per un trasferimento.",
+  new_category:"Nuova categoria", edit_category:"Modifica categoria", category_name:"Nome categoria", category_name_ph:"es. Spesa",
+  applies_to:"Si applica a", both:"Entrambi",
+  new_recurring:"Nuova regola ricorrente", edit_recurring:"Modifica regola", starts:"Inizio", ends_optional:"Fine (opzionale)",
+  active:"Attiva", next_run:"Prossima: {date}", no_recurring:"Nessuna transazione ricorrente", no_recurring_sub:"Automatizza affitto, stipendio, abbonamenti e altro.",
+  no_cashboxes_yet:"Nessuna cassa", add_first_cashbox:"Aggiungi la tua prima cassa per iniziare.",
+  balance:"Saldo", set_pin:"Imposta un PIN a 4 cifre", confirm_pin:"Conferma il PIN", enter_pin:"Inserisci il PIN",
+  wrong_pin:"PIN errato, riprova", pin_mismatch:"I PIN non coincidono, riprova", unlock:"Sblocca",
+  disable_lock:"Disattiva blocco app", search_results:"risultati", no_results:"Nessuna transazione trovata",
+  cashbox_deleted:"Cassa eliminata", category_deleted:"Categoria eliminata", recurring_deleted:"Regola rimossa",
+  select_language:"Scegli la lingua", currency_totals:"Totali per valuta", of_limit:"di {limit}",
+  income_vs_expense:"Entrate vs uscite", overview:"Panoramica", export_done:"Backup scaricato", csv_done:"CSV scaricato",
+  required_field:"Obbligatorio", invalid_amount:"Inserisci un importo valido", pick_emoji:"Scegli un'icona", pick_color:"Scegli un colore",
+  no_categories_for_type:"Nessuna categoria per questo tipo — aggiungine una qui sotto.", quick_add:"Aggiungi",
+  budget_amount:"Importo limite", spent_of:"{spent} di {limit}", remove_budget:"Rimuovi budget",
+  invalid_pin:"Inserisci 4 cifre", data_management:"Backup, ripristino e reset", about:"Informazioni", version:"Versione 1.0",
+  edit_details:"Modifica dettagli", edit_amount_category:"Importo e categoria",
+},
+ar:{
+  app_name:"سمارت كاش", nav_home:"الرئيسية", nav_boxes:"الصناديق", nav_ledger:"السجل", nav_reports:"التقارير", nav_settings:"الإعدادات",
+  onb_title:"مرحبًا بك في سمارت كاش", onb_sub:"تابع أموالك النقدية عبر عدة صناديق وعملات، بسرعة وبدون إنترنت. لننشئ أول صندوق لك.",
+  onb_cta:"أنشئ أول صندوق",
+  total_balance:"الرصيد الإجمالي", your_cashboxes:"صناديقك", recent_activity:"النشاط الأخير", view_all:"عرض الكل",
+  no_transactions:"لا توجد معاملات بعد", no_transactions_sub:"ستظهر هنا المعاملات التي تضيفها.",
+  add_transaction:"إضافة معاملة", edit_transaction:"تعديل المعاملة", income:"دخل", expense:"مصروف", transfer:"تحويل",
+  amount:"المبلغ", description:"الوصف", category:"الفئة", date:"التاريخ", cashbox:"الصندوق",
+  save:"حفظ", cancel:"إلغاء", delete:"حذف", edit:"تعديل", close:"إغلاق", create:"إنشاء", done:"تم",
+  description_ph:"ما سبب هذه المعاملة؟", select_category:"اختر فئة",
+  make_recurring:"اجعلها متكررة", frequency:"التكرار", daily:"يوميًا", weekly:"أسبوعيًا", monthly:"شهريًا",
+  new_cashbox:"صندوق جديد", cashbox_name:"اسم الصندوق", cashbox_name_ph:"مثال: المحفظة، المدخرات، صندوق المكتب",
+  currency:"العملة", initial_balance:"الرصيد الابتدائي", icon:"الأيقونة", color:"اللون",
+  cashboxes_title:"الصناديق", manage_cashboxes:"إدارة حساباتك",
+  edit_cashbox:"تعديل الصندوق", delete_cashbox:"حذف الصندوق",
+  delete_cashbox_warn:"سيتم حذف هذا الصندوق وجميع معاملاته نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+  ledger_title:"السجل", search_ph:"ابحث في المعاملات…", all_cashboxes:"كل الصناديق", all_categories:"الكل",
+  newest:"الأحدث", oldest:"الأقدم", sort:"الترتيب",
+  reports_title:"التقارير", today:"اليوم", this_month:"هذا الشهر", custom_range:"فترة مخصصة",
+  from:"من", to:"إلى", apply:"تطبيق", total_income:"إجمالي الدخل", total_expense:"إجمالي المصروف", net:"الصافي",
+  by_category:"حسب الفئة", budgets:"الميزانيات", no_budgets:"لا توجد ميزانيات بعد", set_budget:"حدد ميزانية",
+  budget_limit:"الحد الشهري", manage_budgets:"إدارة الميزانيات", add_budget:"إضافة ميزانية",
+  settings_title:"الإعدادات", language:"اللغة", appearance:"المظهر", light:"فاتح", dark:"داكن", auto:"تلقائي",
+  security:"الأمان", app_lock:"قفل التطبيق", app_lock_sub:"طلب رمز PIN لفتح التطبيق",
+  categories_title:"الفئات", manage_categories:"إضافة أو تعديل أو حذف الفئات",
+  recurring_title:"المعاملات المتكررة", manage_recurring:"أتمتة الدخل والمصروفات المتكررة",
+  data_title:"البيانات", backup:"نسخ احتياطي", backup_sub:"تصدير كل البيانات كملف JSON",
+  export_csv:"تصدير CSV", export_csv_sub:"تنزيل المعاملات لجداول البيانات",
+  restore:"استعادة نسخة احتياطية", restore_sub:"استيراد البيانات من ملف JSON",
+  danger_zone:"منطقة الخطر", clear_all:"مسح كل البيانات", clear_all_sub:"حذف جميع الصناديق والمعاملات",
+  confirm_delete_title:"هل تريد الحذف؟", confirm_delete_txn:"سيتم حذف هذه المعاملة نهائيًا.",
+  confirm_delete_cat:"حذف هذه الفئة؟ ستحتفظ المعاملات باسم الفئة القديم.",
+  confirm_delete_rec:"سيتم إزالة هذه القاعدة المتكررة. لن تتأثر المعاملات السابقة.",
+  confirm_clear:"سيتم مسح جميع الصناديق والمعاملات والفئات والإعدادات. لا يمكن التراجع عن هذا.",
+  confirm_restore:"سيتم استبدال بياناتك الحالية بمحتوى ملف النسخة الاحتياطية.",
+  undo:"تراجع", deleted:"تم الحذف", restored:"تمت استعادة البيانات", saved:"تم الحفظ", cleared:"تم مسح كل البيانات",
+  transfer_title:"تحويل بين الصناديق", from_cashbox:"من", to_cashbox:"إلى", exchange_rate:"سعر الصرف",
+  exchange_rate_hint:"1 {from} = ? {to}", received_amount:"المبلغ المستلم",
+  need_two_cashboxes:"تحتاج إلى صندوقين على الأقل لإجراء تحويل.",
+  new_category:"فئة جديدة", edit_category:"تعديل الفئة", category_name:"اسم الفئة", category_name_ph:"مثال: البقالة",
+  applies_to:"تنطبق على", both:"كلاهما",
+  new_recurring:"قاعدة متكررة جديدة", edit_recurring:"تعديل القاعدة", starts:"تبدأ في", ends_optional:"تنتهي في (اختياري)",
+  active:"مفعّلة", next_run:"التالي: {date}", no_recurring:"لا توجد معاملات متكررة", no_recurring_sub:"أتمتة الإيجار، الراتب، الاشتراكات وغيرها.",
+  no_cashboxes_yet:"لا توجد صناديق بعد", add_first_cashbox:"أضف أول صندوق لك للبدء.",
+  balance:"الرصيد", set_pin:"حدد رمز PIN من 4 أرقام", confirm_pin:"أكّد رمز PIN", enter_pin:"أدخل رمز PIN",
+  wrong_pin:"رمز PIN غير صحيح، حاول مرة أخرى", pin_mismatch:"الرمزان غير متطابقين، حاول مرة أخرى", unlock:"فتح",
+  disable_lock:"إيقاف قفل التطبيق", search_results:"نتيجة", no_results:"لا توجد معاملات مطابقة",
+  cashbox_deleted:"تم حذف الصندوق", category_deleted:"تم حذف الفئة", recurring_deleted:"تمت إزالة القاعدة",
+  select_language:"اختر اللغة", currency_totals:"الإجماليات حسب العملة", of_limit:"من {limit}",
+  income_vs_expense:"الدخل مقابل المصروف", overview:"نظرة عامة", export_done:"تم تنزيل النسخة الاحتياطية", csv_done:"تم تنزيل ملف CSV",
+  required_field:"مطلوب", invalid_amount:"أدخل مبلغًا صحيحًا", pick_emoji:"اختر أيقونة", pick_color:"اختر لونًا",
+  no_categories_for_type:"لا توجد فئات لهذا النوع بعد — أضف واحدة أدناه.", quick_add:"إضافة",
+  budget_amount:"مبلغ الحد", spent_of:"{spent} من {limit}", remove_budget:"إزالة الميزانية",
+  invalid_pin:"أدخل 4 أرقام", data_management:"النسخ الاحتياطي والاستعادة وإعادة الضبط", about:"حول", version:"الإصدار 1.0",
+  edit_details:"تعديل التفاصيل", edit_amount_category:"المبلغ والفئة",
+}
+};
+function t(key, vars){
+  let s = (I18N[state.settings.language] && I18N[state.settings.language][key]) || I18N.en[key] || key;
+  if(vars){ Object.keys(vars).forEach(k=>{ s = s.replace('{'+k+'}', vars[k]); }); }
+  return s;
+}
+function catName(cat){
+  if(!cat) return '';
+  if(cat.name_key) return t(cat.name_key);
+  return cat.name || '';
+}
+
+/* ---------------- formatting ---------------- */
+function fmtNum(n){
+  const sign = n<0 ? '-' : '';
+  const v = Math.abs(n);
+  return sign + v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtAmount(n, currency){
+  return CURRENCY_SYMBOL[currency] + ' ' + fmtNum(n);
+}
+function fmtDate(iso){
+  const d = new Date(iso+'T00:00:00');
+  const locale = state.settings.language==='ar' ? 'ar-EG' : (state.settings.language==='it' ? 'it-IT' : 'en-GB');
+  try{ return d.toLocaleDateString(locale, {day:'numeric', month:'short', year:'numeric'}); }
+  catch(e){ return iso; }
+}
+function fmtDateShort(iso){
+  const d = new Date(iso+'T00:00:00');
+  const locale = state.settings.language==='ar' ? 'ar-EG' : (state.settings.language==='it' ? 'it-IT' : 'en-GB');
+  try{ return d.toLocaleDateString(locale, {day:'numeric', month:'short'}); }
+  catch(e){ return iso; }
+}
+
+/* ---------------- data logic ---------------- */
+function getCashbox(id){ return state.cashboxes.find(c=>c.id===id); }
+function getCategory(id){ return state.categories.find(c=>c.id===id); }
+
+function cashboxBalance(cashboxId){
+  const cb = getCashbox(cashboxId);
+  if(!cb) return 0;
+  let bal = cb.initialBalance || 0;
+  state.transactions.forEach(tx=>{
+    if(tx.deleted) return;
+    if(tx.type==='income' && tx.cashboxId===cashboxId) bal += tx.amount;
+    else if(tx.type==='expense' && tx.cashboxId===cashboxId) bal -= tx.amount;
+    else if(tx.type==='transfer'){
+      if(tx.cashboxId===cashboxId) bal -= tx.amount;
+      if(tx.toCashboxId===cashboxId) bal += (tx.toAmount!=null ? tx.toAmount : tx.amount);
+    }
+  });
+  return bal;
+}
+function totalsByCurrency(){
+  const totals = {EUR:0, USD:0, EGP:0};
+  state.cashboxes.forEach(cb=>{ totals[cb.currency] = (totals[cb.currency]||0) + cashboxBalance(cb.id); });
+  return totals;
+}
+function activeTransactions(){ return state.transactions.filter(tx=>!tx.deleted); }
+
+/* recurring processing: generate due transactions up to today */
+function nextDateFrom(dateISO, freq){
+  const d = new Date(dateISO+'T00:00:00');
+  if(freq==='daily') d.setDate(d.getDate()+1);
+  else if(freq==='weekly') d.setDate(d.getDate()+7);
+  else d.setMonth(d.getMonth()+1);
+  return d.toISOString().slice(0,10);
+}
+function processRecurring(){
+  const today = todayISO();
+  let changed = false;
+  state.recurring.forEach(rule=>{
+    if(!rule.active) return;
+    let guard = 0;
+    while(rule.nextDate <= today && guard < 600 && (!rule.endDate || rule.nextDate <= rule.endDate)){
+      state.transactions.push({
+        id: uid(), cashboxId: rule.cashboxId, type: rule.type, amount: rule.amount,
+        categoryId: rule.categoryId, description: rule.description, date: rule.nextDate,
+        recurringId: rule.id, createdAt: Date.now()
+      });
+      rule.nextDate = nextDateFrom(rule.nextDate, rule.frequency);
+      changed = true; guard++;
+      if(rule.endDate && rule.nextDate > rule.endDate){ rule.active = false; break; }
+    }
+  });
+  if(changed) save();
+}
+
+/* ---------------- router & UI state ---------------- */
+let route = 'dashboard';
+let routeParam = null;
+let ui = {
+  ledgerSearch:'', ledgerCashbox:'all', ledgerCategory:'all', ledgerSort:'newest',
+  reportsRange:'month', reportsFrom: todayISO().slice(0,8)+'01', reportsTo: todayISO(),
+  cashboxDetailId:null, locked:false, pinBuffer:'', pinStage:'enter', pinFirstEntry:null
+};
+
+function setRoute(r, param){ route = r; routeParam = param||null; renderApp(); window.scrollTo(0,0); }
+
+/* ---------------- toast ---------------- */
+function showToast(msg, actionLabel, actionFn){
+  const host = document.getElementById('toastHost');
+  const el = document.createElement('div');
+  el.className='toast';
+  el.innerHTML = `<span>${msg}</span>` + (actionLabel? `<button type="button">${actionLabel}</button>`:'');
+  if(actionLabel && actionFn){
+    el.querySelector('button').addEventListener('click', ()=>{ actionFn(); el.remove(); });
+  }
+  host.appendChild(el);
+  setTimeout(()=>{ if(el.parentNode) el.remove(); }, 4500);
+}
+function flashSuccess(){
+  const el = document.getElementById('successFlash');
+  if(!el) return;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 650);
+}
+
+/* ---------------- soft delete + undo ---------------- */
+function softDeleteTxn(id){
+  const tx = state.transactions.find(x=>x.id===id);
+  if(!tx) return;
+  tx.deleted = true; save(); renderApp();
+  showToast(t('deleted'), t('undo'), ()=>{ tx.deleted=false; save(); renderApp(); });
+}
+
+/* ============================================================
+   RENDER: shell
+   ============================================================ */
+function applyThemeAndDir(){
+  document.documentElement.lang = state.settings.language;
+  document.documentElement.dir = state.settings.language==='ar' ? 'rtl' : 'ltr';
+  document.documentElement.setAttribute('data-theme', state.settings.theme==='auto' ? '' : state.settings.theme);
+  document.getElementById('pageHeadTitle').textContent = t('app_name');
+  document.querySelectorAll('#bottomnav [data-t]').forEach(el=>{ el.textContent = t(el.getAttribute('data-t')); });
+  document.querySelectorAll('#bottomnav .nav-item').forEach(el=>{
+    el.classList.toggle('active', el.getAttribute('data-route')===route || (route==='cashbox' && el.getAttribute('data-route')==='cashboxes'));
+  });
+}
+
+function renderApp(){
+  if(!state.settings.onboarded && state.cashboxes.length===0){
+    document.getElementById('bottomnav').style.display='none';
+    document.getElementById('topbar').style.display='none';
+    document.getElementById('app').innerHTML = renderOnboarding();
+  } else {
+    document.getElementById('bottomnav').style.display='';
+    document.getElementById('topbar').style.display='';
+    let html='';
+    if(route==='dashboard') html = renderDashboard();
+    else if(route==='cashboxes') html = renderCashboxes();
+    else if(route==='cashbox') html = renderCashboxDetail(routeParam);
+    else if(route==='ledger') html = renderLedger();
+    else if(route==='reports') html = renderReports();
+    else if(route==='settings') html = renderSettings();
+    else if(route==='categories') html = renderCategories();
+    else if(route==='recurring') html = renderRecurring();
+    else html = renderDashboard();
+    document.getElementById('app').innerHTML = html;
+  }
+  applyThemeAndDir();
+  bindDynamicEvents();
+  const appEl = document.getElementById('app');
+  appEl.classList.remove('page-anim');
+  void appEl.offsetWidth;
+  appEl.classList.add('page-anim');
+}
+
+/* ============================================================
+   ONBOARDING
+   ============================================================ */
+function renderOnboarding(){
+  return `<div class="onb">
+    <div class="onb-mark">SC</div>
+    <h1>${t('onb_title')}</h1>
+    <p>${t('onb_sub')}</p>
+    <button class="btn btn-primary" id="onbCreateBtn">➕ ${t('onb_cta')}</button>
+  </div>`;
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function renderDashboard(){
+  const totals = totalsByCurrency();
+  const cur = state.settings.dashboardCurrency;
+  const recent = activeTransactions().slice().sort((a,b)=> (b.date+b.createdAt).localeCompare(a.date+a.createdAt)).slice(0,6);
+
+  let cboxHtml = state.cashboxes.map(cb=>{
+    const bal = cashboxBalance(cb.id);
+    return `<div class="cbox-card" data-open-cashbox="${cb.id}">
+      <div class="cb-icon" style="background:${cb.color}22; color:${cb.color}">${cb.icon}</div>
+      <div class="cb-name">${escapeHtml(cb.name)}</div>
+      <div class="cb-bal amount ${bal<0?'neg':''}">${fmtAmount(bal, cb.currency)}</div>
+    </div>`;
+  }).join('');
+  cboxHtml += `<div class="cbox-card add-new" id="dashAddCashbox"><span style="font-size:22px">➕</span><span style="font-size:12px;font-weight:700">${t('new_cashbox')}</span></div>`;
+
+  let recentHtml = recent.length ? recent.map(tx=>renderTxnRow(tx)).join('') :
+    `<div class="empty"><div class="e-ic">📭</div><h3>${t('no_transactions')}</h3><p>${t('no_transactions_sub')}</p></div>`;
+
+  const budgets = state.budgets.filter(b=>true);
+  let budgetHtml = '';
+  if(budgets.length){
+    budgetHtml = `<div class="section-head"><h3>${t('budgets')}</h3><button class="link-btn" data-route-to="settings" data-sub="budgets">${t('manage_budgets')}</button></div><div class="card">` +
+      budgets.slice(0,4).map(b=>renderBudgetItem(b)).join('') + `</div>`;
+  }
+
+  return `
+    <div class="hero-balance">
+      <div class="hero-label">${t('total_balance')}</div>
+      <div class="hero-figure amount">${fmtAmount(totals[cur]||0, cur)}</div>
+      <div class="currency-tabs">
+        ${CURRENCIES.map(c=>`<button class="ctab ${c===cur?'active':''}" data-set-dash-currency="${c}">${c}</button>`).join('')}
+      </div>
+    </div>
+
+    <div class="section-head"><h3>${t('your_cashboxes')}</h3></div>
+    <div class="cbox-scroll">${cboxHtml}</div>
+
+    ${budgetHtml}
+
+    <div class="section-head"><h3>${t('recent_activity')}</h3>${recent.length? `<button class="link-btn" data-route-to="ledger">${t('view_all')}</button>`:''}</div>
+    <div class="card" style="padding:6px 12px;">${recentHtml}</div>
+  `;
+}
+
+function renderBudgetItem(b){
+  const cat = getCategory(b.categoryId);
+  const spent = monthSpendForCategory(b.categoryId);
+  const pct = Math.min(100, Math.round((spent/b.limit)*100)) || 0;
+  const cls = pct>=100 ? 'over' : (pct>=80 ? 'warn' : '');
+  return `<div class="budget-item">
+    <div class="budget-top"><span class="bname">${cat?cat.icon+' '+catName(cat):'—'}</span><span class="amount">${t('spent_of',{spent:fmtNum(spent), limit:fmtNum(b.limit)})} ${CURRENCY_SYMBOL[b.currency]}</span></div>
+    <div class="budget-track"><div class="budget-fill ${cls}" style="width:${pct}%"></div></div>
+  </div>`;
+}
+function monthSpendForCategory(categoryId){
+  const ym = todayISO().slice(0,7);
+  return activeTransactions().filter(tx=>tx.type==='expense' && tx.categoryId===categoryId && tx.date.slice(0,7)===ym)
+    .reduce((s,tx)=>s+tx.amount,0);
+}
+
+function renderTxnRow(tx){
+  const cat = getCategory(tx.categoryId);
+  const cb = getCashbox(tx.cashboxId);
+  const toCb = tx.toCashboxId ? getCashbox(tx.toCashboxId) : null;
+  let icon = '💱', color='#6B7280', label='', sign='', amtCls='';
+  if(tx.type==='income'){ icon = cat?cat.icon:'➕'; color = cat?cat.color:'#3F7D5C'; sign='+'; amtCls='pos'; }
+  else if(tx.type==='expense'){ icon = cat?cat.icon:'➖'; color = cat?cat.color:'#B33F3F'; sign='-'; amtCls='neg'; }
+  else { icon='🔁'; color='#C08A2E'; sign=''; amtCls=''; }
+  const desc = tx.description ? escapeHtml(tx.description) : (tx.type==='transfer' ? t('transfer') : (cat?catName(cat):t(tx.type)));
+  const metaParts = [];
+  if(tx.type==='transfer'){ metaParts.push((cb?cb.name:'')+' → '+(toCb?toCb.name:'')); }
+  else { if(cat) metaParts.push(catName(cat)); if(cb) metaParts.push(cb.name); }
+  const amount = tx.type==='transfer' ? fmtAmount(tx.amount, cb?cb.currency:'EUR') : fmtAmount(tx.amount, cb?cb.currency:'EUR');
+  return `<div class="txn-row" data-txn="${tx.id}">
+    <div class="txn-ic" style="background:${color}20; color:${color}">${icon}</div>
+    <div class="txn-mid"><div class="txn-desc">${desc}</div><div class="txn-meta">${escapeHtml(metaParts.join(' · '))}</div></div>
+    <div class="txn-right"><div class="txn-amt ${amtCls} amount">${sign}${amount}</div><div class="txn-date">${fmtDateShort(tx.date)}</div></div>
+  </div>`;
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+
+/* ============================================================
+   CASHBOXES LIST
+   ============================================================ */
+function renderCashboxes(){
+  if(state.cashboxes.length===0){
+    return `<h1 class="page-title">${t('cashboxes_title')}</h1><p class="page-sub">${t('manage_cashboxes')}</p>
+      <div class="empty"><div class="e-ic">🗂️</div><h3>${t('no_cashboxes_yet')}</h3><p>${t('add_first_cashbox')}</p>
+      <button class="btn btn-primary" style="max-width:260px;margin:0 auto" id="emptyAddCashbox">➕ ${t('new_cashbox')}</button></div>`;
+  }
+  const rows = state.cashboxes.map(cb=>{
+    const bal = cashboxBalance(cb.id);
+    return `<div class="card" style="margin-bottom:12px; display:flex; align-items:center; gap:14px; padding:16px;" data-open-cashbox="${cb.id}">
+      <div class="cb-icon" style="width:44px;height:44px;font-size:20px;background:${cb.color}22;color:${cb.color}">${cb.icon}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:800; font-size:15px;">${escapeHtml(cb.name)}</div>
+        <div style="font-size:12px; color:var(--text-dim)">${cb.currency}</div>
+      </div>
+      <div style="text-align:end">
+        <div class="amount ${bal<0?'neg':''}" style="font-weight:700; font-size:16px;">${fmtAmount(bal, cb.currency)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<h1 class="page-title">${t('cashboxes_title')}</h1><p class="page-sub">${t('manage_cashboxes')}</p>
+    ${rows}
+    <button class="btn btn-ghost" id="addCashboxBtn2">➕ ${t('new_cashbox')}</button>`;
+}
+
+/* ============================================================
+   CASHBOX DETAIL
+   ============================================================ */
+function renderCashboxDetail(id){
+  const cb = getCashbox(id);
+  if(!cb){ setRoute('cashboxes'); return ''; }
+  const bal = cashboxBalance(cb.id);
+  const txns = activeTransactions().filter(tx=>tx.cashboxId===cb.id || tx.toCashboxId===cb.id)
+    .sort((a,b)=> (b.date+b.createdAt).localeCompare(a.date+a.createdAt));
+  let rows = txns.length ? txns.map(tx=>renderTxnRow(tx)).join('') :
+    `<div class="empty"><div class="e-ic">📭</div><h3>${t('no_transactions')}</h3><p>${t('no_transactions_sub')}</p></div>`;
+  return `
+    <button class="icon-btn" data-route-to="cashboxes" style="margin-bottom:10px;">←</button>
+    <div class="hero-balance">
+      <div class="hero-label">${escapeHtml(cb.name)} · ${cb.currency}</div>
+      <div class="hero-figure amount ${bal<0?'neg':''}">${fmtAmount(bal, cb.currency)}</div>
+    </div>
+    <div style="display:flex; gap:10px; margin:16px 0;">
+      <button class="btn btn-ghost btn-sm" style="flex:1" data-edit-cashbox="${cb.id}">✏️ ${t('edit')}</button>
+      <button class="btn btn-danger btn-sm" style="flex:1" data-delete-cashbox="${cb.id}">🗑️ ${t('delete')}</button>
+    </div>
+    <div class="section-head"><h3>${t('recent_activity')}</h3></div>
+    <div class="card" style="padding:6px 12px;">${rows}</div>
+  `;
+}
+
+/* ============================================================
+   LEDGER (search / filter / sort)
+   ============================================================ */
+function renderLedger(){
+  let list = activeTransactions();
+  if(ui.ledgerCashbox!=='all') list = list.filter(tx=>tx.cashboxId===ui.ledgerCashbox || tx.toCashboxId===ui.ledgerCashbox);
+  if(ui.ledgerCategory!=='all') list = list.filter(tx=>tx.categoryId===ui.ledgerCategory);
+  if(ui.ledgerSearch.trim()){
+    const q = ui.ledgerSearch.trim().toLowerCase();
+    list = list.filter(tx=>{
+      const cat = getCategory(tx.categoryId);
+      return (tx.description||'').toLowerCase().includes(q) || (cat && catName(cat).toLowerCase().includes(q));
+    });
+  }
+  list.sort((a,b)=> ui.ledgerSort==='newest' ? (b.date+b.createdAt).localeCompare(a.date+a.createdAt) : (a.date+a.createdAt).localeCompare(b.date+b.createdAt));
+
+  const cbPills = `<button class="filter-pill ${ui.ledgerCashbox==='all'?'active':''}" data-ledger-cb="all">${t('all_cashboxes')}</button>` +
+    state.cashboxes.map(cb=>`<button class="filter-pill ${ui.ledgerCashbox===cb.id?'active':''}" data-ledger-cb="${cb.id}">${cb.icon} ${escapeHtml(cb.name)}</button>`).join('');
+
+  const catPills = `<button class="filter-pill ${ui.ledgerCategory==='all'?'active':''}" data-ledger-cat="all">${t('all_categories')}</button>` +
+    state.categories.map(c=>`<button class="filter-pill ${ui.ledgerCategory===c.id?'active':''}" data-ledger-cat="${c.id}">${c.icon} ${catName(c)}</button>`).join('');
+
+  const rows = list.length ? list.map(tx=>renderTxnRow(tx)).join('') :
+    `<div class="empty"><div class="e-ic">🔎</div><h3>${t('no_results')}</h3></div>`;
+
+  return `
+    <h1 class="page-title">${t('ledger_title')}</h1>
+    <div class="search-bar"><span>🔍</span><input type="text" id="ledgerSearchInput" placeholder="${t('search_ph')}" value="${escapeHtml(ui.ledgerSearch)}"></div>
+    <div class="filter-row">${cbPills}</div>
+    <div class="filter-row">${catPills}</div>
+    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+      <div class="seg" style="width:auto; display:inline-flex;">
+        <button class="${ui.ledgerSort==='newest'?'active':''}" data-ledger-sort="newest">${t('newest')}</button>
+        <button class="${ui.ledgerSort==='oldest'?'active':''}" data-ledger-sort="oldest">${t('oldest')}</button>
+      </div>
+    </div>
+    <div class="card" style="padding:6px 12px;">${rows}</div>
+  `;
+}
+
+/* ============================================================
+   REPORTS
+   ============================================================ */
+function rangeForPreset(preset){
+  const today = todayISO();
+  if(preset==='today') return {from:today, to:today};
+  if(preset==='month') return {from: today.slice(0,8)+'01', to: today};
+  return {from: ui.reportsFrom, to: ui.reportsTo};
+}
+function renderReports(){
+  const range = rangeForPreset(ui.reportsRange);
+  const list = activeTransactions().filter(tx=> tx.type!=='transfer' && tx.date>=range.from && tx.date<=range.to);
+
+  // totals by currency
+  const totals = {}; // currency -> {income, expense}
+  list.forEach(tx=>{
+    const cb = getCashbox(tx.cashboxId); if(!cb) return;
+    totals[cb.currency] = totals[cb.currency] || {income:0, expense:0};
+    if(tx.type==='income') totals[cb.currency].income += tx.amount; else totals[cb.currency].expense += tx.amount;
+  });
+  const totalsHtml = Object.keys(totals).length ? Object.keys(totals).map(cur=>{
+    const d = totals[cur];
+    return `<div class="stat-box">
+      <div class="s-label">${cur}</div>
+      <div class="s-val pos">+${fmtNum(d.income)}</div>
+      <div class="s-val neg">-${fmtNum(d.expense)}</div>
+      <div class="s-val" style="margin-top:4px; border-top:1px solid var(--line); padding-top:6px;">${t('net')}: ${fmtNum(d.income-d.expense)}</div>
+    </div>`;
+  }).join('') : `<div class="empty" style="padding:30px 10px;"><div class="e-ic">📊</div><h3>${t('no_transactions')}</h3></div>`;
+
+  // by category (expenses)
+  const byCat = {};
+  list.filter(tx=>tx.type==='expense').forEach(tx=>{ byCat[tx.categoryId] = (byCat[tx.categoryId]||0)+tx.amount; });
+  const maxCat = Math.max(1, ...Object.values(byCat));
+  const catBars = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).map(cid=>{
+    const cat = getCategory(cid);
+    const pct = Math.round((byCat[cid]/maxCat)*100);
+    return `<div class="bar-row">
+      <div class="bar-label">${cat?cat.icon+' '+catName(cat):'—'}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${cat?cat.color:'#999'}"></div></div>
+      <div class="bar-val amount">${fmtNum(byCat[cid])}</div>
+    </div>`;
+  }).join('') || `<p style="color:var(--text-dim); font-size:13px;">${t('no_transactions')}</p>`;
+
+  // budgets
+  let budgetHtml = '';
+  if(state.budgets.length){
+    budgetHtml = `<div class="section-head"><h3>${t('budgets')}</h3><button class="link-btn" id="goBudgets">${t('manage_budgets')}</button></div>
+      <div class="card">${state.budgets.map(b=>renderBudgetItem(b)).join('')}</div>`;
+  } else {
+    budgetHtml = `<div class="section-head"><h3>${t('budgets')}</h3><button class="link-btn" id="goBudgets">${t('set_budget')}</button></div>`;
+  }
+
+  return `
+    <h1 class="page-title">${t('reports_title')}</h1>
+    <div class="seg" style="margin-bottom:12px;">
+      <button class="${ui.reportsRange==='today'?'active':''}" data-report-range="today">${t('today')}</button>
+      <button class="${ui.reportsRange==='month'?'active':''}" data-report-range="month">${t('this_month')}</button>
+      <button class="${ui.reportsRange==='custom'?'active':''}" data-report-range="custom">${t('custom_range')}</button>
+    </div>
+    ${ui.reportsRange==='custom' ? `
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div class="field" style="margin-bottom:0; flex:1;"><label>${t('from')}</label><input type="date" id="reportFrom" value="${ui.reportsFrom}"></div>
+        <div class="field" style="margin-bottom:0; flex:1;"><label>${t('to')}</label><input type="date" id="reportTo" value="${ui.reportsTo}"></div>
+      </div>` : ''}
+    <div class="stat-grid">${totalsHtml}</div>
+    ${budgetHtml}
+    <div class="section-head"><h3>${t('by_category')}</h3></div>
+    <div class="card">${catBars}</div>
+  `;
+}
+
+/* ============================================================
+   CATEGORIES
+   ============================================================ */
+function renderCategories(){
+  const income = state.categories.filter(c=>c.type==='income'||c.type==='both');
+  const expense = state.categories.filter(c=>c.type==='expense'||c.type==='both');
+  const rowHtml = c => `<div class="settings-row">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="cb-icon" style="width:36px;height:36px;font-size:16px;background:${c.color}22;color:${c.color}">${c.icon}</div>
+        <div class="sr-label">${catName(c)}</div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="mini-btn" data-edit-category="${c.id}">✏️</button>
+        <button class="mini-btn" data-delete-category="${c.id}">🗑️</button>
+      </div>
+    </div>`;
+  return `
+    <button class="icon-btn" data-route-to="settings" style="margin-bottom:10px;">←</button>
+    <h1 class="page-title">${t('categories_title')}</h1>
+    <p class="page-sub">${t('manage_categories')}</p>
+    <div class="section-head"><h3>${t('income')}</h3></div>
+    <div class="settings-group">${income.map(rowHtml).join('') || '<p style="padding:14px 2px;color:var(--text-dim);font-size:13px;">—</p>'}</div>
+    <div class="section-head"><h3>${t('expense')}</h3></div>
+    <div class="settings-group">${expense.map(rowHtml).join('') || '<p style="padding:14px 2px;color:var(--text-dim);font-size:13px;">—</p>'}</div>
+    <button class="btn btn-ghost" id="addCategoryBtn">➕ ${t('new_category')}</button>
+  `;
+}
+
+/* ============================================================
+   RECURRING
+   ============================================================ */
+function renderRecurring(){
+  const rows = state.recurring.map(r=>{
+    const cat = getCategory(r.categoryId); const cb = getCashbox(r.cashboxId);
+    return `<div class="settings-row">
+      <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+        <div class="cb-icon" style="width:36px;height:36px;font-size:16px;background:${cat?cat.color:'#999'}22;color:${cat?cat.color:'#999'}">${cat?cat.icon:'🔁'}</div>
+        <div style="min-width:0;">
+          <div class="sr-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r.description)||catName(cat)}</div>
+          <div class="sr-sub">${cb?cb.name:''} · ${t(r.frequency)} · ${fmtAmount(r.amount, cb?cb.currency:'EUR')} · ${t('next_run',{date:fmtDateShort(r.nextDate)})}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+        <button class="switch ${r.active?'on':''}" data-toggle-recurring="${r.id}"></button>
+        <button class="mini-btn" data-edit-recurring="${r.id}">✏️</button>
+        <button class="mini-btn" data-delete-recurring="${r.id}">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `
+    <button class="icon-btn" data-route-to="settings" style="margin-bottom:10px;">←</button>
+    <h1 class="page-title">${t('recurring_title')}</h1>
+    <p class="page-sub">${t('manage_recurring')}</p>
+    ${state.recurring.length ? `<div class="settings-group">${rows}</div>` : `<div class="empty"><div class="e-ic">🔁</div><h3>${t('no_recurring')}</h3><p>${t('no_recurring_sub')}</p></div>`}
+    <button class="btn btn-ghost" id="addRecurringBtn">➕ ${t('new_recurring')}</button>
+  `;
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function renderSettings(){
+  return `
+    <h1 class="page-title">${t('settings_title')}</h1>
+
+    <div class="section-head"><h3>${t('appearance')}</h3></div>
+    <div class="settings-group">
+      <div class="settings-row"><div class="sr-label">${t('language')}</div>
+        <select id="langSelect" style="border:1.5px solid var(--line); border-radius:9px; padding:7px 10px; background:var(--paper-2);">
+          <option value="en" ${state.settings.language==='en'?'selected':''}>English</option>
+          <option value="it" ${state.settings.language==='it'?'selected':''}>Italiano</option>
+          <option value="ar" ${state.settings.language==='ar'?'selected':''}>العربية</option>
+        </select>
+      </div>
+      <div class="settings-row"><div class="sr-label">${t('appearance')}</div>
+        <div class="seg" style="width:auto;">
+          <button class="${state.settings.theme==='auto'?'active':''}" data-set-theme="auto">${t('auto')}</button>
+          <button class="${state.settings.theme==='light'?'active':''}" data-set-theme="light">${t('light')}</button>
+          <button class="${state.settings.theme==='dark'?'active':''}" data-set-theme="dark">${t('dark')}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head"><h3>${t('security')}</h3></div>
+    <div class="settings-group">
+      <div class="settings-row">
+        <div><div class="sr-label">${t('app_lock')}</div><div class="sr-sub">${t('app_lock_sub')}</div></div>
+        <button class="switch ${state.settings.pinEnabled?'on':''}" id="togglePin"></button>
+      </div>
+    </div>
+
+    <div class="section-head"><h3>${t('overview')}</h3></div>
+    <div class="settings-group">
+      <div class="settings-row" data-route-to="categories"><div class="sr-label">${t('categories_title')}</div><span>›</span></div>
+      <div class="settings-row" data-route-to="recurring"><div class="sr-label">${t('recurring_title')}</div><span>›</span></div>
+      <div class="settings-row" id="budgetsRow"><div class="sr-label">${t('budgets')}</div><span>›</span></div>
+    </div>
+
+    <div class="section-head"><h3>${t('data_title')}</h3></div>
+    <div class="settings-group">
+      <div class="settings-row" id="backupBtn"><div><div class="sr-label">${t('backup')}</div><div class="sr-sub">${t('backup_sub')}</div></div><span>⬇️</span></div>
+      <div class="settings-row" id="csvBtn"><div><div class="sr-label">${t('export_csv')}</div><div class="sr-sub">${t('export_csv_sub')}</div></div><span>⬇️</span></div>
+      <div class="settings-row" id="restoreBtn"><div><div class="sr-label">${t('restore')}</div><div class="sr-sub">${t('restore_sub')}</div></div><span>⬆️</span></div>
+      <input type="file" id="restoreFileInput" accept="application/json" class="hidden">
+    </div>
+
+    <div class="danger-zone">
+      <h4>${t('danger_zone')}</h4>
+      <button class="btn btn-danger" id="clearAllBtn">🗑️ ${t('clear_all')}</button>
+    </div>
+    <p style="text-align:center; color:var(--text-dim); font-size:12px; margin-top:20px;">${t('app_name')} · ${t('version')}</p>
+  `;
+}
+
+/* budgets management sheet content rendered inside a modal (openBudgetsManager) */
+
+/* ============================================================
+   MODALS / SHEETS
+   ============================================================ */
+function openSheet(innerHtml, onMount){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="overlay" id="overlayEl"><div class="sheet" id="sheetEl">
+    <div class="sheet-handle"></div>${innerHtml}</div></div>`;
+  const overlay = document.getElementById('overlayEl');
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeSheet(); });
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  if(onMount) onMount();
+}
+function closeSheet(){
+  const overlay = document.getElementById('overlayEl');
+  if(!overlay) return;
+  overlay.classList.remove('show');
+  setTimeout(()=>{ document.getElementById('modalRoot').innerHTML=''; }, 220);
+}
+
+function openConfirm(iconEmoji, title, desc, confirmLabel, onConfirm){
+  openSheet(`
+    <div class="confirm-box">
+      <div class="confirm-ic">${iconEmoji}</div>
+      <h3>${title}</h3><p>${desc}</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" id="confirmCancel">${t('cancel')}</button>
+        <button class="btn btn-danger" id="confirmOk">${confirmLabel}</button>
+      </div>
+    </div>`, ()=>{
+      document.getElementById('confirmCancel').addEventListener('click', closeSheet);
+      document.getElementById('confirmOk').addEventListener('click', ()=>{ onConfirm(); closeSheet(); });
+    });
+}
+
+const EMOJI_SET = ['💼','🎁','➕','🍽️','🚗','🧾','🛍️','💊','🏠','🎬','➖','☕','✈️','🎓','🐾','📱','🎮','👶','💇','🧴','🚕','⚡','💧','🎵','📚','🧰','🌿','🍺','🎂','💳'];
+const COLOR_SET = ['#14213D','#C08A2E','#3F7D5C','#B33F3F','#6B7280','#2F6F8F','#8A4FBE','#C2554E'];
+
+/* ---------- Add / Edit Transaction ---------- */
+function openTransactionModal(existing){
+  if(state.cashboxes.length===0){ openCashboxModal(null); return; }
+  const isEdit = !!existing;
+  let type = existing ? existing.type : 'expense';
+  let cashboxId = existing ? existing.cashboxId : (state.settings.lastCashboxId && getCashbox(state.settings.lastCashboxId) ? state.settings.lastCashboxId : state.cashboxes[0].id);
+  let categoryId = existing ? existing.categoryId : null;
+  let iconEmoji='';
+
+  function catsFor(tp){ return state.categories.filter(c=>c.type===tp || c.type==='both'); }
+
+  function bodyHtml(){
+    const cb = getCashbox(cashboxId);
+    const cats = catsFor(type);
+    if(!categoryId || !cats.find(c=>c.id===categoryId)) categoryId = cats[0] ? cats[0].id : null;
+    return `
+      <div class="sheet-head"><h2>${isEdit?t('edit_transaction'):t('add_transaction')}</h2><button class="sheet-close" id="txClose">✕</button></div>
+      <div class="seg" style="margin-bottom:16px;">
+        <button class="${type==='expense'?'active':''}" data-tx-type="expense">${t('expense')}</button>
+        <button class="${type==='income'?'active':''}" data-tx-type="income">${t('income')}</button>
+      </div>
+      <div class="field"><label>${t('amount')}</label><input type="number" inputmode="decimal" step="0.01" min="0" id="txAmount" placeholder="0.00" value="${existing?existing.amount:''}"></div>
+      <div class="field"><label>${t('cashbox')}</label><select id="txCashbox">${state.cashboxes.map(c=>`<option value="${c.id}" ${c.id===cashboxId?'selected':''}>${c.icon} ${escapeHtml(c.name)} (${c.currency})</option>`).join('')}</select></div>
+      <div class="field"><label>${t('category')}</label><div class="chip-row" id="txCatRow">
+        ${cats.length ? cats.map(c=>`<button type="button" class="chip ${c.id===categoryId?'active':''}" data-tx-cat="${c.id}">${c.icon} ${catName(c)}</button>`).join('') : `<span style="font-size:12.5px;color:var(--text-dim)">${t('no_categories_for_type')}</span>`}
+      </div></div>
+      <div class="field"><label>${t('description')}</label><input type="text" id="txDesc" placeholder="${t('description_ph')}" value="${existing?escapeHtml(existing.description||''):''}"></div>
+      <div class="field"><label>${t('date')}</label><input type="date" id="txDate" value="${existing?existing.date:todayISO()}"></div>
+      ${!isEdit ? `
+      <div class="field" style="display:flex; align-items:center; justify-content:space-between;">
+        <label style="margin:0;">${t('make_recurring')}</label>
+        <button class="switch" id="txRecurToggle"></button>
+      </div>
+      <div id="txRecurBlock" class="hidden">
+        <div class="field"><label>${t('frequency')}</label>
+          <div class="seg"><button class="active" data-tx-freq="monthly">${t('monthly')}</button><button data-tx-freq="weekly">${t('weekly')}</button><button data-tx-freq="daily">${t('daily')}</button></div>
+        </div>
+      </div>` : ''}
+      <button class="btn btn-primary" id="txSave">${t('save')}</button>
+    `;
+  }
+  let freq='monthly'; let recurOn=false;
+
+  function mount(){
+    document.getElementById('txClose').addEventListener('click', closeSheet);
+    document.querySelectorAll('[data-tx-type]').forEach(b=>b.addEventListener('click', ()=>{ type=b.getAttribute('data-tx-type'); rerender(); }));
+    document.getElementById('txCashbox').addEventListener('change', e=>{ cashboxId=e.target.value; });
+    document.querySelectorAll('[data-tx-cat]').forEach(b=>b.addEventListener('click', ()=>{ categoryId=b.getAttribute('data-tx-cat'); rerender(); }));
+    const recurToggle = document.getElementById('txRecurToggle');
+    if(recurToggle){
+      recurToggle.addEventListener('click', ()=>{ recurOn=!recurOn; recurToggle.classList.toggle('on', recurOn); document.getElementById('txRecurBlock').classList.toggle('hidden', !recurOn); });
+    }
+    document.querySelectorAll('[data-tx-freq]').forEach(b=>b.addEventListener('click', ()=>{
+      freq=b.getAttribute('data-tx-freq'); document.querySelectorAll('[data-tx-freq]').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    }));
+    document.getElementById('txSave').addEventListener('click', ()=>{
+      const amt = parseFloat(document.getElementById('txAmount').value);
+      const desc = document.getElementById('txDesc').value.trim();
+      const date = document.getElementById('txDate').value || todayISO();
+      if(!amt || amt<=0 || isNaN(amt)){ shake('txAmount'); return; }
+      if(!categoryId){ return; }
+      state.settings.lastCashboxId = cashboxId;
+      if(isEdit){
+        existing.type=type; existing.amount=amt; existing.cashboxId=cashboxId; existing.categoryId=categoryId; existing.description=desc; existing.date=date;
+      } else {
+        state.transactions.push({id:uid(), type, amount:amt, cashboxId, categoryId, description:desc, date, createdAt:Date.now()});
+        if(recurOn){
+          state.recurring.push({id:uid(), type, amount:amt, cashboxId, categoryId, description:desc, frequency:freq, startDate:date, nextDate:nextDateFrom(date,freq), endDate:null, active:true});
+        }
+      }
+      save(); closeSheet(); renderApp(); flashSuccess(); showToast(t('saved'));
+    });
+  }
+  function rerender(){
+    document.getElementById('sheetEl').innerHTML = `<div class="sheet-handle"></div>` + bodyHtml();
+    mount();
+  }
+  openSheet(bodyHtml(), mount);
+}
+function shake(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.style.borderColor='var(--clay)';
+  el.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}], {duration:250});
+}
+
+/* ---------- Cashbox add/edit ---------- */
+function openCashboxModal(existing){
+  const isEdit = !!existing;
+  let icon = existing ? existing.icon : '💰';
+  let color = existing ? existing.color : COLOR_SET[0];
+  let currency = existing ? existing.currency : 'EUR';
+  const body = `
+    <div class="sheet-head"><h2>${isEdit?t('edit_cashbox'):t('new_cashbox')}</h2><button class="sheet-close" id="cbClose">✕</button></div>
+    <div class="field"><label>${t('cashbox_name')}</label><input type="text" id="cbName" placeholder="${t('cashbox_name_ph')}" value="${existing?escapeHtml(existing.name):''}"></div>
+    <div class="field"><label>${t('currency')}</label><div class="seg">${CURRENCIES.map(c=>`<button class="${c===currency?'active':''}" data-cb-cur="${c}">${c}</button>`).join('')}</div></div>
+    ${!isEdit ? `<div class="field"><label>${t('initial_balance')}</label><input type="number" step="0.01" id="cbInitial" placeholder="0.00" value="0"></div>` : ''}
+    <div class="field"><label>${t('icon')}</label><div class="emoji-grid" id="cbEmojiGrid">${EMOJI_SET.map(e=>`<button type="button" class="emoji-cell ${e===icon?'active':''}" data-cb-emoji="${e}">${e}</button>`).join('')}</div></div>
+    <div class="field"><label>${t('color')}</label><div class="swatch-row">${COLOR_SET.map(c=>`<button type="button" class="swatch ${c===color?'active':''}" style="background:${c}" data-cb-color="${c}"></button>`).join('')}</div></div>
+    <button class="btn btn-primary" id="cbSave">${isEdit?t('save'):t('create')}</button>
+  `;
+  openSheet(body, ()=>{
+    document.getElementById('cbClose').addEventListener('click', closeSheet);
+    document.querySelectorAll('[data-cb-cur]').forEach(b=>b.addEventListener('click', ()=>{ currency=b.getAttribute('data-cb-cur'); document.querySelectorAll('[data-cb-cur]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.querySelectorAll('[data-cb-emoji]').forEach(b=>b.addEventListener('click', ()=>{ icon=b.getAttribute('data-cb-emoji'); document.querySelectorAll('[data-cb-emoji]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.querySelectorAll('[data-cb-color]').forEach(b=>b.addEventListener('click', ()=>{ color=b.getAttribute('data-cb-color'); document.querySelectorAll('[data-cb-color]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.getElementById('cbSave').addEventListener('click', ()=>{
+      const name = document.getElementById('cbName').value.trim();
+      if(!name){ shake('cbName'); return; }
+      if(isEdit){
+        existing.name=name; existing.currency=currency; existing.icon=icon; existing.color=color;
+      } else {
+        const initial = parseFloat(document.getElementById('cbInitial').value)||0;
+        const nb = {id:uid(), name, currency, icon, color, initialBalance:initial};
+        state.cashboxes.push(nb);
+        state.settings.onboarded = true;
+        state.settings.dashboardCurrency = currency;
+      }
+      save(); closeSheet(); setRoute(isEdit?route:'dashboard', routeParam); showToast(t('saved'));
+    });
+  });
+}
+
+/* ---------- Transfer ---------- */
+function openTransferModal(){
+  if(state.cashboxes.length<2){ openConfirm('🔁', t('transfer_title'), t('need_two_cashboxes'), t('close'), ()=>{}); return; }
+  let fromId = state.cashboxes[0].id, toId = state.cashboxes[1].id, rate=1;
+  function body(){
+    const from = getCashbox(fromId), to = getCashbox(toId);
+    const needsRate = from.currency !== to.currency;
+    return `
+      <div class="sheet-head"><h2>${t('transfer_title')}</h2><button class="sheet-close" id="trClose">✕</button></div>
+      <div class="field"><label>${t('from_cashbox')}</label><select id="trFrom">${state.cashboxes.map(c=>`<option value="${c.id}" ${c.id===fromId?'selected':''}>${c.icon} ${escapeHtml(c.name)} (${c.currency})</option>`).join('')}</select></div>
+      <div class="field"><label>${t('to_cashbox')}</label><select id="trTo">${state.cashboxes.map(c=>`<option value="${c.id}" ${c.id===toId?'selected':''}>${c.icon} ${escapeHtml(c.name)} (${c.currency})</option>`).join('')}</select></div>
+      <div class="field"><label>${t('amount')} (${from.currency})</label><input type="number" step="0.01" id="trAmount" placeholder="0.00"></div>
+      ${needsRate ? `<div class="field"><label>${t('exchange_rate')} <span style="color:var(--text-dim); font-weight:400;">(${t('exchange_rate_hint',{from:from.currency,to:to.currency})})</span></label><input type="number" step="0.0001" id="trRate" value="${rate}"></div>
+      <div class="field"><label>${t('received_amount')} (${to.currency})</label><input type="text" id="trReceived" disabled></div>` : ''}
+      <button class="btn btn-primary" id="trSave">${t('save')}</button>
+    `;
+  }
+  function mount(){
+    document.getElementById('trClose').addEventListener('click', closeSheet);
+    document.getElementById('trFrom').addEventListener('change', e=>{ fromId=e.target.value; rerender(); });
+    document.getElementById('trTo').addEventListener('change', e=>{ toId=e.target.value; rerender(); });
+    const amtEl = document.getElementById('trAmount');
+    const rateEl = document.getElementById('trRate');
+    function updateReceived(){
+      const recv = document.getElementById('trReceived');
+      if(recv){ const a=parseFloat(amtEl.value)||0; const r=parseFloat(rateEl?rateEl.value:1)||0; recv.value = fmtNum(a*r); }
+    }
+    if(amtEl) amtEl.addEventListener('input', updateReceived);
+    if(rateEl) rateEl.addEventListener('input', updateReceived);
+    document.getElementById('trSave').addEventListener('click', ()=>{
+      const amt = parseFloat(amtEl.value);
+      if(!amt || amt<=0){ shake('trAmount'); return; }
+      if(fromId===toId){ shake('trAmount'); return; }
+      const from = getCashbox(fromId), to = getCashbox(toId);
+      let toAmount = amt;
+      if(from.currency!==to.currency){
+        const r = parseFloat(document.getElementById('trRate').value)||1;
+        toAmount = amt*r;
+      }
+      state.transactions.push({id:uid(), type:'transfer', amount:amt, cashboxId:fromId, toCashboxId:toId, toAmount, description:'', date:todayISO(), createdAt:Date.now()});
+      save(); closeSheet(); renderApp(); showToast(t('saved'));
+    });
+  }
+  function rerender(){ document.getElementById('sheetEl').innerHTML = `<div class="sheet-handle"></div>`+body(); mount(); }
+  openSheet(body(), mount);
+}
+
+/* ---------- Category add/edit ---------- */
+function openCategoryModal(existing){
+  const isEdit = !!existing;
+  let icon = existing ? existing.icon : EMOJI_SET[0];
+  let color = existing ? existing.color : COLOR_SET[0];
+  let ctype = existing ? existing.type : 'expense';
+  const body = `
+    <div class="sheet-head"><h2>${isEdit?t('edit_category'):t('new_category')}</h2><button class="sheet-close" id="catClose">✕</button></div>
+    <div class="field"><label>${t('category_name')}</label><input type="text" id="catName" placeholder="${t('category_name_ph')}" value="${existing&&!existing.name_key?escapeHtml(existing.name||''):(existing?catName(existing):'')}"></div>
+    <div class="field"><label>${t('applies_to')}</label><div class="seg">
+      <button class="${ctype==='expense'?'active':''}" data-cat-type="expense">${t('expense')}</button>
+      <button class="${ctype==='income'?'active':''}" data-cat-type="income">${t('income')}</button>
+      <button class="${ctype==='both'?'active':''}" data-cat-type="both">${t('both')}</button>
+    </div></div>
+    <div class="field"><label>${t('icon')}</label><div class="emoji-grid">${EMOJI_SET.map(e=>`<button type="button" class="emoji-cell ${e===icon?'active':''}" data-cat-emoji="${e}">${e}</button>`).join('')}</div></div>
+    <div class="field"><label>${t('color')}</label><div class="swatch-row">${COLOR_SET.map(c=>`<button type="button" class="swatch ${c===color?'active':''}" style="background:${c}" data-cat-color="${c}"></button>`).join('')}</div></div>
+    <button class="btn btn-primary" id="catSave">${isEdit?t('save'):t('create')}</button>
+  `;
+  openSheet(body, ()=>{
+    document.getElementById('catClose').addEventListener('click', closeSheet);
+    document.querySelectorAll('[data-cat-type]').forEach(b=>b.addEventListener('click', ()=>{ ctype=b.getAttribute('data-cat-type'); document.querySelectorAll('[data-cat-type]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.querySelectorAll('[data-cat-emoji]').forEach(b=>b.addEventListener('click', ()=>{ icon=b.getAttribute('data-cat-emoji'); document.querySelectorAll('[data-cat-emoji]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.querySelectorAll('[data-cat-color]').forEach(b=>b.addEventListener('click', ()=>{ color=b.getAttribute('data-cat-color'); document.querySelectorAll('[data-cat-color]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.getElementById('catSave').addEventListener('click', ()=>{
+      const name = document.getElementById('catName').value.trim();
+      if(!name){ shake('catName'); return; }
+      if(isEdit){ existing.name=name; existing.name_key=null; existing.type=ctype; existing.icon=icon; existing.color=color; }
+      else { state.categories.push({id:uid(), name, type:ctype, icon, color}); }
+      save(); closeSheet(); renderApp(); showToast(t('saved'));
+    });
+  });
+}
+
+/* ---------- Recurring add/edit ---------- */
+function openRecurringModal(existing){
+  if(state.cashboxes.length===0){ openCashboxModal(null); return; }
+  const isEdit = !!existing;
+  let type = existing?existing.type:'expense';
+  let cashboxId = existing?existing.cashboxId:state.cashboxes[0].id;
+  let categoryId = existing?existing.categoryId:null;
+  let freq = existing?existing.frequency:'monthly';
+  function catsFor(tp){ return state.categories.filter(c=>c.type===tp||c.type==='both'); }
+  function body(){
+    const cats = catsFor(type);
+    if(!categoryId || !cats.find(c=>c.id===categoryId)) categoryId = cats[0]?cats[0].id:null;
+    return `
+      <div class="sheet-head"><h2>${isEdit?t('edit_recurring'):t('new_recurring')}</h2><button class="sheet-close" id="rcClose">✕</button></div>
+      <div class="seg" style="margin-bottom:16px;"><button class="${type==='expense'?'active':''}" data-rc-type="expense">${t('expense')}</button><button class="${type==='income'?'active':''}" data-rc-type="income">${t('income')}</button></div>
+      <div class="field"><label>${t('amount')}</label><input type="number" step="0.01" id="rcAmount" value="${existing?existing.amount:''}"></div>
+      <div class="field"><label>${t('cashbox')}</label><select id="rcCashbox">${state.cashboxes.map(c=>`<option value="${c.id}" ${c.id===cashboxId?'selected':''}>${c.icon} ${escapeHtml(c.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('category')}</label><div class="chip-row">${cats.map(c=>`<button type="button" class="chip ${c.id===categoryId?'active':''}" data-rc-cat="${c.id}">${c.icon} ${catName(c)}</button>`).join('')}</div></div>
+      <div class="field"><label>${t('description')}</label><input type="text" id="rcDesc" value="${existing?escapeHtml(existing.description||''):''}"></div>
+      <div class="field"><label>${t('frequency')}</label><div class="seg">
+        <button class="${freq==='monthly'?'active':''}" data-rc-freq="monthly">${t('monthly')}</button>
+        <button class="${freq==='weekly'?'active':''}" data-rc-freq="weekly">${t('weekly')}</button>
+        <button class="${freq==='daily'?'active':''}" data-rc-freq="daily">${t('daily')}</button>
+      </div></div>
+      <div class="field"><label>${t('starts')}</label><input type="date" id="rcStart" value="${existing?existing.startDate:todayISO()}"></div>
+      <div class="field"><label>${t('ends_optional')}</label><input type="date" id="rcEnd" value="${existing&&existing.endDate?existing.endDate:''}"></div>
+      <button class="btn btn-primary" id="rcSave">${isEdit?t('save'):t('create')}</button>
+    `;
+  }
+  function mount(){
+    document.getElementById('rcClose').addEventListener('click', closeSheet);
+    document.querySelectorAll('[data-rc-type]').forEach(b=>b.addEventListener('click', ()=>{ type=b.getAttribute('data-rc-type'); rerender(); }));
+    document.getElementById('rcCashbox').addEventListener('change', e=>cashboxId=e.target.value);
+    document.querySelectorAll('[data-rc-cat]').forEach(b=>b.addEventListener('click', ()=>{ categoryId=b.getAttribute('data-rc-cat'); rerender(); }));
+    document.querySelectorAll('[data-rc-freq]').forEach(b=>b.addEventListener('click', ()=>{ freq=b.getAttribute('data-rc-freq'); document.querySelectorAll('[data-rc-freq]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.getElementById('rcSave').addEventListener('click', ()=>{
+      const amt = parseFloat(document.getElementById('rcAmount').value);
+      if(!amt || amt<=0){ shake('rcAmount'); return; }
+      const desc = document.getElementById('rcDesc').value.trim();
+      const start = document.getElementById('rcStart').value || todayISO();
+      const end = document.getElementById('rcEnd').value || null;
+      if(isEdit){
+        existing.type=type; existing.amount=amt; existing.cashboxId=cashboxId; existing.categoryId=categoryId; existing.description=desc; existing.frequency=freq; existing.startDate=start; existing.endDate=end;
+        if(existing.nextDate < start) existing.nextDate = start;
+      } else {
+        state.recurring.push({id:uid(), type, amount:amt, cashboxId, categoryId, description:desc, frequency:freq, startDate:start, nextDate:start, endDate:end, active:true});
+      }
+      save(); processRecurring(); closeSheet(); renderApp(); showToast(t('saved'));
+    });
+  }
+  function rerender(){ document.getElementById('sheetEl').innerHTML=`<div class="sheet-handle"></div>`+body(); mount(); }
+  openSheet(body(), mount);
+}
+
+/* ---------- Budgets manager ---------- */
+function openBudgetsManager(){
+  function body(){
+    const rows = state.budgets.map(b=>{
+      const cat = getCategory(b.categoryId);
+      return `<div class="settings-row">
+        <div style="display:flex;align-items:center;gap:10px;"><span>${cat?cat.icon:'—'}</span><span class="sr-label">${cat?catName(cat):'—'}</span></div>
+        <div style="display:flex; align-items:center; gap:8px;"><span class="amount" style="font-weight:700;">${fmtAmount(b.limit,b.currency)}</span><button class="mini-btn" data-remove-budget="${b.id}">🗑️</button></div>
+      </div>`;
+    }).join('');
+    const expenseCats = state.categories.filter(c=>c.type==='expense'||c.type==='both');
+    return `
+      <div class="sheet-head"><h2>${t('budgets')}</h2><button class="sheet-close" id="bgClose">✕</button></div>
+      ${state.budgets.length?`<div class="settings-group" style="margin-bottom:18px;">${rows}</div>`:`<p style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">${t('no_budgets')}</p>`}
+      <div class="section-head"><h3>${t('add_budget')}</h3></div>
+      <div class="field"><label>${t('category')}</label><select id="bgCat">${expenseCats.map(c=>`<option value="${c.id}">${c.icon} ${catName(c)}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('currency')}</label><div class="seg">${CURRENCIES.map((c,i)=>`<button class="${i===0?'active':''}" data-bg-cur="${c}">${c}</button>`).join('')}</div></div>
+      <div class="field"><label>${t('budget_amount')}</label><input type="number" step="0.01" id="bgAmount"></div>
+      <button class="btn btn-primary" id="bgSave">${t('add_budget')}</button>
+    `;
+  }
+  let cur = 'EUR';
+  function mount(){
+    document.getElementById('bgClose').addEventListener('click', closeSheet);
+    document.querySelectorAll('[data-remove-budget]').forEach(b=>b.addEventListener('click', ()=>{
+      const id=b.getAttribute('data-remove-budget'); state.budgets = state.budgets.filter(x=>x.id!==id); save(); rerender();
+    }));
+    document.querySelectorAll('[data-bg-cur]').forEach(b=>b.addEventListener('click', ()=>{ cur=b.getAttribute('data-bg-cur'); document.querySelectorAll('[data-bg-cur]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); }));
+    document.getElementById('bgSave').addEventListener('click', ()=>{
+      const categoryId = document.getElementById('bgCat').value;
+      const limit = parseFloat(document.getElementById('bgAmount').value);
+      if(!limit || limit<=0){ shake('bgAmount'); return; }
+      const existingB = state.budgets.find(b=>b.categoryId===categoryId);
+      if(existingB){ existingB.limit=limit; existingB.currency=cur; }
+      else state.budgets.push({id:uid(), categoryId, limit, currency:cur});
+      save(); rerender(); showToast(t('saved'));
+    });
+  }
+  function rerender(){ document.getElementById('sheetEl').innerHTML = `<div class="sheet-handle"></div>`+body(); mount(); renderApp(); }
+  openSheet(body(), mount);
+}
+
+/* ---------- PIN setup ---------- */
+function openPinSetup(){
+  let stage='first'; let first='';
+  function body(msg){
+    return `<div class="sheet-head"><h2>${t('app_lock')}</h2><button class="sheet-close" id="pinClose">✕</button></div>
+    <p style="text-align:center; color:var(--text-dim); font-size:13.5px; margin-bottom:6px;">${stage==='first'?t('set_pin'):t('confirm_pin')}</p>
+    <div style="display:flex; justify-content:center; margin:18px 0;"><input type="password" inputmode="numeric" maxlength="4" id="pinInput" style="width:140px; text-align:center; letter-spacing:10px; font-size:22px; border:1.5px solid var(--line); border-radius:12px; padding:12px; background:var(--paper-2);"></div>
+    <p style="text-align:center; color:var(--clay); font-size:12.5px; min-height:16px;">${msg||''}</p>
+    <button class="btn btn-primary" id="pinNext">${stage==='first'?t('done'):t('done')}</button>`;
+  }
+  function mount(msg){
+    document.getElementById('pinClose').addEventListener('click', closeSheet);
+    const input = document.getElementById('pinInput'); input.focus();
+    document.getElementById('pinNext').addEventListener('click', ()=>{
+      const val = input.value.trim();
+      if(!/^\d{4}$/.test(val)){ rerender(t('invalid_pin')); return; }
+      if(stage==='first'){ first=val; stage='confirm'; rerender(); }
+      else {
+        if(val!==first){ stage='first'; first=''; rerender(t('pin_mismatch')); return; }
+        state.settings.pinEnabled = true; state.settings.pinCode = val; save(); closeSheet(); renderApp(); showToast(t('saved'));
+      }
+    });
+  }
+  function rerender(msg){ document.getElementById('sheetEl').innerHTML = `<div class="sheet-handle"></div>`+body(msg); mount(msg); }
+  openSheet(body(), mount);
+}
+
+/* ---------- Backup / restore ---------- */
+function doBackup(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'smartcash-backup-'+todayISO()+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast(t('export_done'));
+}
+function doCsvExport(){
+  const header = ['date','type','cashbox','currency','category','description','amount'];
+  const lines = [header.join(',')];
+  activeTransactions().slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(tx=>{
+    const cb = getCashbox(tx.cashboxId); const cat = getCategory(tx.categoryId);
+    const row = [tx.date, tx.type, cb?cb.name:'', cb?cb.currency:'', cat?catName(cat):'', (tx.description||'').replace(/"/g,'""'), tx.amount];
+    lines.push(row.map(v=> typeof v==='string' && (v.includes(',')||v.includes('"')) ? `"${v}"` : v).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'smartcash-transactions-'+todayISO()+'.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast(t('csv_done'));
+}
+function doRestore(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data || !Array.isArray(data.cashboxes)) throw new Error('invalid');
+      openConfirm('⬆️', t('confirm_delete_title'), t('confirm_restore'), t('restore'), ()=>{
+        state = data;
+        if(!state.budgets) state.budgets=[];
+        save(); renderApp(); showToast(t('restored'));
+      });
+    }catch(err){ showToast(t('invalid_amount')); }
+  };
+  reader.readAsText(file);
+}
+
+/* ============================================================
+   LOCK SCREEN
+   ============================================================ */
+function renderLock(){
+  const dots = [0,1,2,3].map(i=>`<div class="pin-dot ${i<ui.pinBuffer.length?'filled':''}"></div>`).join('');
+  const keys = [1,2,3,4,5,6,7,8,9,'',0,'⌫'];
+  document.getElementById('lockRoot').innerHTML = `
+    <div class="lockscreen">
+      <div class="lock-mark">🔒</div>
+      <div style="font-weight:800; font-size:17px;">${t('enter_pin')}</div>
+      <div class="pin-dots">${dots}</div>
+      <div class="lock-error">${ui.lockError||''}</div>
+      <div class="pin-pad">
+        ${keys.map(k=> k===''? `<div></div>` : `<button class="pin-key" data-pinkey="${k}">${k}</button>`).join('')}
+      </div>
+    </div>`;
+  document.querySelectorAll('[data-pinkey]').forEach(b=>b.addEventListener('click', ()=>{
+    const k = b.getAttribute('data-pinkey');
+    if(k==='⌫'){ ui.pinBuffer = ui.pinBuffer.slice(0,-1); renderLock(); return; }
+    if(ui.pinBuffer.length<4){ ui.pinBuffer += k; renderLock(); }
+    if(ui.pinBuffer.length===4){
+      setTimeout(()=>{
+        if(ui.pinBuffer===state.settings.pinCode){
+          ui.locked=false; ui.pinBuffer=''; document.getElementById('lockRoot').innerHTML=''; renderApp();
+        } else {
+          ui.lockError = t('wrong_pin'); ui.pinBuffer=''; renderLock();
+        }
+      }, 120);
+    }
+  }));
+}
+
+/* ============================================================
+   EVENT BINDING
+   ============================================================ */
+function bindDynamicEvents(){
+  // nav routing
+  document.querySelectorAll('[data-route-to]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const r = el.getAttribute('data-route-to');
+      if(r==='settings' && el.getAttribute('data-sub')==='budgets'){ setRoute('settings'); openBudgetsManager(); return; }
+      setRoute(r);
+    });
+  });
+  document.querySelectorAll('[data-open-cashbox]').forEach(el=>el.addEventListener('click', ()=>setRoute('cashbox', el.getAttribute('data-open-cashbox'))));
+  document.querySelectorAll('[data-edit-cashbox]').forEach(el=>el.addEventListener('click', (e)=>{ e.stopPropagation(); openCashboxModal(getCashbox(el.getAttribute('data-edit-cashbox'))); }));
+  document.querySelectorAll('[data-delete-cashbox]').forEach(el=>el.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const id = el.getAttribute('data-delete-cashbox');
+    openConfirm('🗑️', t('confirm_delete_title'), t('delete_cashbox_warn'), t('delete'), ()=>{
+      state.cashboxes = state.cashboxes.filter(c=>c.id!==id);
+      state.transactions.forEach(tx=>{ if(tx.cashboxId===id || tx.toCashboxId===id) tx.deleted=true; });
+      state.recurring = state.recurring.filter(r=>r.cashboxId!==id);
+      save(); setRoute('cashboxes'); showToast(t('cashbox_deleted'));
+    });
+  }));
+  const dashAdd = document.getElementById('dashAddCashbox'); if(dashAdd) dashAdd.addEventListener('click', ()=>openCashboxModal(null));
+  const emptyAdd = document.getElementById('emptyAddCashbox'); if(emptyAdd) emptyAdd.addEventListener('click', ()=>openCashboxModal(null));
+  const addCb2 = document.getElementById('addCashboxBtn2'); if(addCb2) addCb2.addEventListener('click', ()=>openCashboxModal(null));
+  const onbBtn = document.getElementById('onbCreateBtn'); if(onbBtn) onbBtn.addEventListener('click', ()=>openCashboxModal(null));
+
+  document.querySelectorAll('[data-set-dash-currency]').forEach(el=>el.addEventListener('click', ()=>{ state.settings.dashboardCurrency = el.getAttribute('data-set-dash-currency'); save(); renderApp(); }));
+
+  // transaction row click -> edit/delete quick sheet
+  document.querySelectorAll('[data-txn]').forEach(el=>el.addEventListener('click', ()=>{
+    const id = el.getAttribute('data-txn');
+    const tx = state.transactions.find(x=>x.id===id);
+    if(!tx) return;
+    if(tx.type==='transfer'){
+      openConfirm('🔁', t('transfer'), fmtAmount(tx.amount, getCashbox(tx.cashboxId)?getCashbox(tx.cashboxId).currency:'EUR')+' → '+fmtAmount(tx.toAmount, getCashbox(tx.toCashboxId)?getCashbox(tx.toCashboxId).currency:'EUR'), t('delete'), ()=>softDeleteTxn(id));
+      return;
+    }
+    openTxnQuickActions(tx);
+  }));
+
+  // ledger controls
+  const lsi = document.getElementById('ledgerSearchInput');
+  if(lsi){ lsi.addEventListener('input', (e)=>{ ui.ledgerSearch = e.target.value; renderApp(); preserveFocus('ledgerSearchInput'); }); }
+  document.querySelectorAll('[data-ledger-cb]').forEach(el=>el.addEventListener('click', ()=>{ ui.ledgerCashbox = el.getAttribute('data-ledger-cb'); renderApp(); }));
+  document.querySelectorAll('[data-ledger-cat]').forEach(el=>el.addEventListener('click', ()=>{ ui.ledgerCategory = el.getAttribute('data-ledger-cat'); renderApp(); }));
+  document.querySelectorAll('[data-ledger-sort]').forEach(el=>el.addEventListener('click', ()=>{ ui.ledgerSort = el.getAttribute('data-ledger-sort'); renderApp(); }));
+
+  // reports
+  document.querySelectorAll('[data-report-range]').forEach(el=>el.addEventListener('click', ()=>{ ui.reportsRange = el.getAttribute('data-report-range'); renderApp(); }));
+  const rf = document.getElementById('reportFrom'); if(rf) rf.addEventListener('change', e=>{ ui.reportsFrom=e.target.value; renderApp(); });
+  const rt = document.getElementById('reportTo'); if(rt) rt.addEventListener('change', e=>{ ui.reportsTo=e.target.value; renderApp(); });
+  const gb = document.getElementById('goBudgets'); if(gb) gb.addEventListener('click', openBudgetsManager);
+
+  // categories
+  const addCatBtn = document.getElementById('addCategoryBtn'); if(addCatBtn) addCatBtn.addEventListener('click', ()=>openCategoryModal(null));
+  document.querySelectorAll('[data-edit-category]').forEach(el=>el.addEventListener('click', ()=>openCategoryModal(getCategory(el.getAttribute('data-edit-category')))));
+  document.querySelectorAll('[data-delete-category]').forEach(el=>el.addEventListener('click', ()=>{
+    const id = el.getAttribute('data-delete-category');
+    openConfirm('🗑️', t('confirm_delete_title'), t('confirm_delete_cat'), t('delete'), ()=>{
+      state.categories = state.categories.filter(c=>c.id!==id);
+      state.budgets = state.budgets.filter(b=>b.categoryId!==id);
+      save(); renderApp(); showToast(t('category_deleted'));
+    });
+  }));
+
+  // recurring
+  const addRecBtn = document.getElementById('addRecurringBtn'); if(addRecBtn) addRecBtn.addEventListener('click', ()=>openRecurringModal(null));
+  document.querySelectorAll('[data-edit-recurring]').forEach(el=>el.addEventListener('click', ()=>openRecurringModal(state.recurring.find(r=>r.id===el.getAttribute('data-edit-recurring')))));
+  document.querySelectorAll('[data-toggle-recurring]').forEach(el=>el.addEventListener('click', ()=>{
+    const r = state.recurring.find(x=>x.id===el.getAttribute('data-toggle-recurring')); if(r){ r.active=!r.active; save(); renderApp(); }
+  }));
+  document.querySelectorAll('[data-delete-recurring]').forEach(el=>el.addEventListener('click', ()=>{
+    const id = el.getAttribute('data-delete-recurring');
+    openConfirm('🗑️', t('confirm_delete_title'), t('confirm_delete_rec'), t('delete'), ()=>{
+      state.recurring = state.recurring.filter(r=>r.id!==id); save(); renderApp(); showToast(t('recurring_deleted'));
+    });
+  }));
+
+  // settings
+  const langSel = document.getElementById('langSelect'); if(langSel) langSel.addEventListener('change', e=>{ state.settings.language=e.target.value; save(); renderApp(); });
+  document.querySelectorAll('[data-set-theme]').forEach(el=>el.addEventListener('click', ()=>{ state.settings.theme=el.getAttribute('data-set-theme'); save(); renderApp(); }));
+  const togglePin = document.getElementById('togglePin');
+  if(togglePin) togglePin.addEventListener('click', ()=>{
+    if(state.settings.pinEnabled){
+      openConfirm('🔓', t('disable_lock'), t('disable_lock'), t('done'), ()=>{ state.settings.pinEnabled=false; state.settings.pinCode=null; save(); renderApp(); });
+    } else { openPinSetup(); }
+  });
+  const budgetsRow = document.getElementById('budgetsRow'); if(budgetsRow) budgetsRow.addEventListener('click', openBudgetsManager);
+  const backupBtn = document.getElementById('backupBtn'); if(backupBtn) backupBtn.addEventListener('click', doBackup);
+  const csvBtn = document.getElementById('csvBtn'); if(csvBtn) csvBtn.addEventListener('click', doCsvExport);
+  const restoreBtn = document.getElementById('restoreBtn'); const restoreInput = document.getElementById('restoreFileInput');
+  if(restoreBtn && restoreInput){ restoreBtn.addEventListener('click', ()=>restoreInput.click()); restoreInput.addEventListener('change', e=>{ if(e.target.files[0]) doRestore(e.target.files[0]); }); }
+  const clearBtn = document.getElementById('clearAllBtn'); if(clearBtn) clearBtn.addEventListener('click', ()=>{
+    openConfirm('⚠️', t('confirm_delete_title'), t('confirm_clear'), t('clear_all'), ()=>{
+      state = defaultState(); save(); setRoute('dashboard'); showToast(t('cleared'));
+    });
+  });
+}
+function preserveFocus(id){ const el = document.getElementById(id); if(el){ el.focus(); const v=el.value; el.value=''; el.value=v; } }
+
+function openTxnQuickActions(tx){
+  const cat = getCategory(tx.categoryId);
+  openSheet(`
+    <div class="sheet-head"><h2>${escapeHtml(tx.description)||catName(cat)}</h2><button class="sheet-close" id="qaClose">✕</button></div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-ghost" id="qaEdit">✏️ ${t('edit')}</button>
+      <button class="btn btn-danger" id="qaDelete">🗑️ ${t('delete')}</button>
+    </div>
+  `, ()=>{
+    document.getElementById('qaClose').addEventListener('click', closeSheet);
+    document.getElementById('qaEdit').addEventListener('click', ()=>{ closeSheet(); setTimeout(()=>openTransactionModal(tx), 200); });
+    document.getElementById('qaDelete').addEventListener('click', ()=>{
+      closeSheet();
+      setTimeout(()=>openConfirm('🗑️', t('confirm_delete_title'), t('confirm_delete_txn'), t('delete'), ()=>softDeleteTxn(tx.id)), 200);
+    });
+  });
+}
+
+/* ============================================================
+   TOP-LEVEL BINDINGS (static)
+   ============================================================ */
+document.getElementById('btnFab').addEventListener('click', ()=>{
+  openActionChooser();
+});
+function openActionChooser(){
+  openSheet(`
+    <div class="sheet-head"><h2>${t('add_transaction')}</h2><button class="sheet-close" id="acClose">✕</button></div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn btn-primary" id="acExpense">➖ ${t('expense')}</button>
+      <button class="btn btn-primary" id="acIncome" style="background:var(--sage); color:#fff;">➕ ${t('income')}</button>
+      <button class="btn btn-ghost" id="acTransfer">🔁 ${t('transfer')}</button>
+    </div>
+  `, ()=>{
+    document.getElementById('acClose').addEventListener('click', closeSheet);
+    document.getElementById('acExpense').addEventListener('click', ()=>{ closeSheet(); setTimeout(()=>{ const m={type:'expense'}; openTransactionModalPreset('expense'); }, 200); });
+    document.getElementById('acIncome').addEventListener('click', ()=>{ closeSheet(); setTimeout(()=>openTransactionModalPreset('income'), 200); });
+    document.getElementById('acTransfer').addEventListener('click', ()=>{ closeSheet(); setTimeout(openTransferModal, 200); });
+  });
+}
+function openTransactionModalPreset(tp){
+  // small wrapper to preset type by temporarily monkey-patching default
+  openTransactionModal(null);
+  // force type after open
+  setTimeout(()=>{
+    const btn = document.querySelector(`[data-tx-type="${tp}"]`);
+    if(btn && !btn.classList.contains('active')) btn.click();
+  }, 10);
+}
+document.querySelectorAll('#bottomnav .nav-item').forEach(el=>{
+  el.addEventListener('click', ()=>setRoute(el.getAttribute('data-route')));
+});
+document.getElementById('btnSettingsTop').addEventListener('click', ()=>setRoute('settings'));
+document.getElementById('btnSearchTop').addEventListener('click', ()=>setRoute('ledger'));
+document.getElementById('app').addEventListener('scroll', ()=>{}, {passive:true});
+window.addEventListener('scroll', ()=>{
+  document.getElementById('topbar').classList.toggle('scrolled', window.scrollY>4);
+}, {passive:true});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  load();
+  processRecurring();
+  if(state.settings.pinEnabled){
+    ui.locked = true;
+    renderLock();
+  }
+  renderApp();
+  const splash = document.getElementById('splashScreen');
+  setTimeout(()=>{ if(splash) splash.classList.add('hide'); setTimeout(()=>{ if(splash&&splash.parentNode) splash.remove(); }, 450); }, 550);
+
+  if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{ /* offline caching unavailable in this context; app still works */ });
+    });
+  }
+}
+init();
+</script>
+</body>
+</html>
